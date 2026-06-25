@@ -142,7 +142,7 @@
 <body>
     <div class="container">
         <h1>🔐 NEXUS74 <span class="tag">OMNI</span> <span class="tag real">REAL CAR</span></h1>
-        <div class="subtitle">Протокол Омни-энтропии. Шифрование привязано к состоянию аквариума, <b>реальным данным авто (ELM327)</b> и рынкам MOEX.</div>
+        <div class="subtitle">Протокол Омни-энтропии. Шифрование привязано к состоянию аквариума, <b>реальным данным авто (ELM327)</b> и <b>реальным рынкам MOEX</b>.</div>
 
         <div class="panel">
             <h3><span class="live-indicator"></span>🐠 Аквариум (Микро)</h3>
@@ -155,7 +155,7 @@
         </div>
 
         <div class="panel">
-            <h3><span class="live-indicator"></span>🇷🇺 Российские рынки (Макро) <span class="tag">MOEX</span></h3>
+            <h3><span class="live-indicator"></span>🇷🇺 Российские рынки <span class="tag real">MOEX LIVE</span></h3>
             <pre id="global">загрузка...</pre>
         </div>
 
@@ -171,10 +171,10 @@
         </div>
 
         <div class="panel">
-            <h3>🛡️ Режим шифрования</h3>
+            <h3>️ Режим шифрования</h3>
             <div class="mode-selector">
                 <button class="mode-btn active" onclick="setMode('std', this)">🟢 Стандарт<br>256 бит</button>
-                <button class="mode-btn" onclick="setMode('par', this)">🟡 Параноик<br>1024 бита</button>
+                <button class="mode-btn" onclick="setMode('par', this)"> Параноик<br>1024 бита</button>
                 <button class="mode-btn" onclick="setMode('otp', this)">🔴 Абсолют<br>∞ бит (OTP)</button>
             </div>
             <div class="strength-meter" id="strengthMeter">
@@ -192,8 +192,8 @@
                 <textarea id="msg" placeholder="Секретное сообщение">челябинск</textarea>
             </div>
             <div class="button-group">
-                <button onclick="doEncrypt()" class="success" id="encBtn"> Зашифровать</button>
-                <button onclick="doDecrypt()" id="decBtn"> Расшифровать</button>
+                <button onclick="doEncrypt()" class="success" id="encBtn">🔒 Зашифровать</button>
+                <button onclick="doDecrypt()" id="decBtn">🔓 Расшифровать</button>
                 <button onclick="doTamper()" class="danger">⚠️ Атака (Чужие рыбки)</button>
             </div>
             <div class="result info" id="res">Готов к работе. Выберите режим и нажмите "Зашифровать".</div>
@@ -202,7 +202,7 @@
         <div class="panel">
             <h3>📖 Как это работает?</h3>
             <div style="font-size: 12px; line-height: 1.6; color: #c0c0c0;">
-                <p><strong style="color: #34c759;"> Стандарт (256 бит):</strong> AES-256-GCM. Ключ = SHA-256(Аквариум + Авто + MOEX + Пароль). Невзламываемо.</p>
+                <p><strong style="color: #34c759;">🟢 Стандарт (256 бит):</strong> AES-256-GCM. Ключ = SHA-256(Аквариум + Авто + MOEX + Пароль). Невзламываемо.</p>
                 <p style="margin-top:8px;"><strong style="color: #ff9500;">🟡 Параноик (1024 бит):</strong> 4 слоя AES-256. Каждый слой использует свой срез энтропии. Взлом требует перебора 2^1024 вариантов.</p>
                 <p style="margin-top:8px;"><strong style="color: #ff3b30;">🔴 Абсолют (OTP):</strong> Одноразовый блокнот. Длина ключа = длине сообщения. Идеальная криптография (доказано Шенноном).</p>
             </div>
@@ -215,6 +215,7 @@
     let lastEnc = null;
     let changes = 0;
     let startTime = Date.now();
+    let lastMoexData = null; // Кэш для MOEX (обновляется раз в 10 сек)
 
     // ===== ДЕТЕРМИНИРОВАННЫЙ PRNG =====
     function rng(seed) {
@@ -240,24 +241,61 @@
         // Данные из Car Scanner: RPM 700-900, Temp 101, Pressure 40-45, Throttle ~12%
         return {
             source: 'elm327_real',
-            rpm: 750 + Math.sin(t/2000)*100 + r()*50,       // 700-900 rpm
-            coolantTemp: 101 + (r()-0.5)*0.5,               // ~101 °C
-            intakePressure: 42 + Math.sin(t/3000)*3 + r()*2, // 40-45 kPa
-            throttle: 12.16 + (r()-0.5)*0.4,                // ~12.16 %
-            ignitionAngle: -26 + (r()-0.5)*10,              // -22° to -32°
-            o2Sensor1: 0.79 + (r()-0.5)*0.16,               // 0.72-0.88 V
-            fuelTrim: 0.35 + (r()-0.5)*16                   // -10% to +6%
+            rpm: 750 + Math.sin(t/2000)*100 + r()*50,
+            coolantTemp: 101 + (r()-0.5)*0.5,
+            intakePressure: 42 + Math.sin(t/3000)*3 + r()*2,
+            throttle: 12.16 + (r()-0.5)*0.4,
+            ignitionAngle: -26 + (r()-0.5)*10,
+            o2Sensor1: 0.79 + (r()-0.5)*0.16,
+            fuelTrim: 0.35 + (r()-0.5)*16
         };
     }
 
-    // 3. Рынки MOEX (Симуляция)
-    function getMoex(t) {
-        const r = rng(t + 7777);
-        return {
-            sber: 265 + Math.sin(t/100000)*5 + r()*3,
-            moex: 3170 + Math.cos(t/80000)*20 + r()*10,
-            usd: 90 + Math.sin(t/120000)*1 + (r()-0.5)*0.5
-        };
+    // 3. РЕАЛЬНЫЙ MOEX API через CORS-прокси
+    async function getMoexReal() {
+        const proxy = 'https://corsproxy.io/?';
+        
+        try {
+            const [sberResp, moexResp, usdResp] = await Promise.all([
+                fetch(proxy + encodeURIComponent('https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER.json?securities.columns=LAST')),
+                fetch(proxy + encodeURIComponent('https://iss.moex.com/iss/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json?securities.columns=LAST')),
+                fetch(proxy + encodeURIComponent('https://iss.moex.com/iss/engines/currency/markets/selt/securities/USD000UTSTOM.json?securities.columns=LAST'))
+            ]);
+
+            const sberData = await sberResp.json();
+            const moexData = await moexResp.json();
+            const usdData = await usdResp.json();
+
+            const sber = sberData.securities?.data?.[0]?.[0] || 265;
+            const moex = moexData.securities?.data?.[0]?.[0] || 3150;
+            const usd = usdData.securities?.data?.[0]?.[0] || 90;
+
+            return {
+                source: 'moex_real',
+                timestamp: Date.now(),
+                sber: sber,
+                moex: moex,
+                usd: usd
+            };
+        } catch (e) {
+            console.warn('MOEX API error, using fallback:', e);
+            return {
+                source: 'moex_fallback',
+                timestamp: Date.now(),
+                sber: 265 + Math.random() * 2,
+                moex: 3150 + Math.random() * 10,
+                usd: 90 + Math.random()
+            };
+        }
+    }
+
+    // Кэшированная версия (обновляется раз в 10 секунд)
+    async function getMoex() {
+        const now = Date.now();
+        if (!lastMoexData || (now - lastMoexData.timestamp) > 10000) {
+            lastMoexData = await getMoexReal();
+        }
+        return lastMoexData;
     }
 
     // ===== КРИПТОГРАФИЧЕСКОЕ ЯДРО =====
@@ -379,10 +417,12 @@
         const t = Date.now();
         document.getElementById('aqua').textContent = JSON.stringify(getAqua(t), null, 2);
         document.getElementById('vehicle').textContent = JSON.stringify(getCar(t), null, 2);
-        document.getElementById('global').textContent = JSON.stringify(getMoex(t), null, 2);
+        
+        const moexData = await getMoex();
+        document.getElementById('global').textContent = JSON.stringify(moexData, null, 2);
 
         const ts = Math.floor(t / 1000);
-        const fp = await sha256({ a: getAqua(ts), v: getCar(ts), m: getMoex(ts), t: ts });
+        const fp = await sha256({ a: getAqua(ts), v: getCar(ts), m: moexData, t: ts });
         document.getElementById('fingerprint').textContent = 
             Array.from(fp).map(b => b.toString(16).padStart(2, '0')).join('');
         
@@ -395,7 +435,7 @@
         const res = document.getElementById('res');
         const btn = document.getElementById('encBtn');
         res.className = 'result info';
-        res.textContent = '⏳ Шифрование...';
+        res.textContent = ' Шифрование...';
         btn.disabled = true;
 
         try {
@@ -403,7 +443,8 @@
             const msg = document.getElementById('msg').value;
             const data = new TextEncoder().encode(msg);
             const ts = Math.floor(Date.now() / 1000);
-            const snap = { a: getAqua(ts), v: getCar(ts), m: getMoex(ts), t: ts };
+            const moexData = await getMoex();
+            const snap = { a: getAqua(ts), v: getCar(ts), m: moexData, t: ts };
 
             let enc;
             const start = Date.now();
@@ -455,9 +496,8 @@
 
         try {
             const pwd = document.getElementById('pwd').value;
-            // Создаём фейковый снапшот (как будто рыбки уплыли, а машина заглушена)
             const fakeTs = Math.floor(Date.now() / 1000) + 999999;
-            const fakeSnap = { a: getAqua(fakeTs), v: getCar(fakeTs), m: getMoex(fakeTs), t: fakeTs };
+            const fakeSnap = { a: getAqua(fakeTs), v: getCar(fakeTs), m: await getMoex(), t: fakeTs };
             
             const fakeEnc = { ...lastEnc, snap: fakeSnap };
             if (lastEnc.mode === 'par') {
@@ -469,7 +509,6 @@
             else if (fakeEnc.mode === 'par') pt = await decPar(fakeEnc, pwd);
             else pt = await decOTP(fakeEnc, pwd);
 
-            // Для OTP проверяем, осмысленный ли текст (простая эвристика)
             if (lastEnc.mode === 'otp') {
                 const text = new TextDecoder().decode(pt);
                 if (text !== document.getElementById('msg').value) throw new Error('Data corrupted (OTP checksum failed)');
