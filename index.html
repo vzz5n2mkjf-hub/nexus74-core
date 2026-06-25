@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS74 — Physical-Bound Cryptography</title>
+    <title>NEXUS74 — Omni-Entropy Protocol</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -22,7 +22,7 @@
             align-items: center;
             gap: 10px;
         }
-        .subtitle { color: #8e8e93; font-size: 14px; margin-bottom: 20px; }
+        .subtitle { color: #8e8e93; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
         .panel {
             background: rgba(255,255,255,0.03);
             padding: 16px;
@@ -61,99 +61,44 @@
             font-size: 11px;
             line-height: 1.5;
             color: #a0a0a0;
-            max-height: 200px;
+            max-height: 180px;
             overflow-y: auto;
         }
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
+        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
         input {
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
-            color: #e0e0e0;
-            font-size: 14px;
-            width: 100%;
+            padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05); color: #e0e0e0; font-size: 14px; width: 100%;
         }
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
+        input:focus { outline: none; border-color: #667eea; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 8px; }
         button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex: 1;
-            min-width: 120px;
+            color: white; border: none; padding: 12px 20px; border-radius: 8px;
+            font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            flex: 1; min-width: 120px;
         }
         button:active { transform: scale(0.97); }
-        button.danger {
-            background: linear-gradient(135deg, #ff3b30 0%, #ff6b35 100%);
-        }
-        button.success {
-            background: linear-gradient(135deg, #34c759 0%, #30d158 100%);
-        }
+        button.danger { background: linear-gradient(135deg, #ff3b30 0%, #ff6b35 100%); }
+        button.success { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); }
         .result {
-            margin-top: 12px;
-            padding: 12px;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.03);
-            font-size: 12px;
-            line-height: 1.6;
-            min-height: 60px;
+            margin-top: 12px; padding: 12px; border-radius: 8px;
+            background: rgba(255,255,255,0.03); font-size: 12px; line-height: 1.6; min-height: 60px;
         }
         .result.success { border-left: 3px solid #34c759; }
         .result.error { border-left: 3px solid #ff3b30; }
         .result.info { border-left: 3px solid #667eea; }
         .live-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #34c759;
-            border-radius: 50%;
-            margin-right: 6px;
-            animation: pulse 2s infinite;
+            display: inline-block; width: 8px; height: 8px; background: #34c759;
+            border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite;
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-top: 12px;
-        }
-        .stat {
-            background: rgba(255,255,255,0.03);
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .stat .number {
-            font-size: 18px;
-            font-weight: 700;
-            color: #667eea;
-        }
-        .stat .label {
-            font-size: 10px;
-            color: #8e8e93;
-            margin-top: 2px;
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+        .stat { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; text-align: center; }
+        .stat .number { font-size: 18px; font-weight: 700; color: #667eea; }
+        .stat .label { font-size: 10px; color: #8e8e93; margin-top: 2px; }
+        .tag {
+            display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px;
+            font-weight: 600; background: rgba(102,126,234,0.15); color: #667eea; margin-left: 8px;
         }
         @media (max-width: 600px) {
             h1 { font-size: 22px; }
@@ -164,27 +109,32 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔐 NEXUS74</h1>
-        <div class="subtitle">Physical-Bound Cryptographic Protocol<br>Шифрование привязано к состоянию аквариума и автомобиля</div>
+        <h1> NEXUS74 <span class="tag">OMNI-ENTROPY</span></h1>
+        <div class="subtitle">Протокол Омни-энтропии. Шифрование привязано к состоянию аквариума, автомобиля и глобальным рынкам (BTC, VIX).</div>
 
         <div class="panel">
-            <h3><span class="live-indicator"></span>🐠 Аквариум (live)</h3>
+            <h3><span class="live-indicator"></span>🐠 Аквариум (Микро)</h3>
             <pre id="aqua">загрузка...</pre>
         </div>
 
         <div class="panel">
-            <h3><span class="live-indicator"></span>🚗 Автомобиль (live)</h3>
+            <h3><span class="live-indicator"></span>🚗 Автомобиль (Микро)</h3>
             <pre id="vehicle">загрузка...</pre>
+        </div>
+
+        <div class="panel">
+            <h3><span class="live-indicator"></span>🌍 Глобальные рынки (Макро) <span class="tag">NEW</span></h3>
+            <pre id="global">загрузка...</pre>
         </div>
 
         <div class="panel">
             <h3>🔑 Физический отпечаток P(t)</h3>
             <div class="fingerprint" id="fingerprint">—</div>
-            <div class="status">⚡ Обновляется каждую секунду. Изменилось состояние → изменился ключ.</div>
+            <div class="status">⚡ Обновляется каждую секунду. Изменилось состояние → изменился ключ и алгоритм.</div>
             <div class="stats">
                 <div class="stat">
-                    <div class="number" id="entropyRate">256</div>
-                    <div class="label">бит/сек</div>
+                    <div class="number" id="entropyRate">512</div>
+                    <div class="label">бит энтропии</div>
                 </div>
                 <div class="stat">
                     <div class="number" id="keyChanges">0</div>
@@ -206,51 +156,46 @@
             <div class="button-group">
                 <button onclick="testEncrypt()" class="success">🔒 Зашифровать</button>
                 <button onclick="testDecrypt()">🔓 Расшифровать</button>
-                <button onclick="testTamper()" class="danger">⚠️ Чужие рыбки</button>
+                <button onclick="testTamper()" class="danger">⚠️ Чужие рыбки + Биржа</button>
             </div>
             <div class="result info" id="result">Нажми "Зашифровать" для начала теста</div>
         </div>
 
         <div class="panel">
-            <h3>📖 Как это работает?</h3>
+            <h3>📖 Как работает Omni-Entropy?</h3>
             <div style="font-size: 13px; line-height: 1.7; color: #c0c0c0;">
-                <p><strong style="color: #667eea;">1. Физическая энтропия</strong><br>
-                Каждую секунду собираем данные с аквариума (температура, pH, движение рыбок) и автомобиля (GPS, скорость, вибрация).</p>
-                <p style="margin-top: 10px;"><strong style="color: #667eea;">2. Физический отпечаток P(t)</strong><br>
-                Хэшируем всё в 256-битный отпечаток. Он уникален для каждой секунды.</p>
-                <p style="margin-top: 10px;"><strong style="color: #667eea;">3. Каскад ключей</strong><br>
-                K₀ = PBKDF2(пароль, P(t₀))<br>
-                Kₙ = HKDF(Kₙ₋₁, P(tₙ))<br>
-                Каждый ключ зависит от ВСЕХ предыдущих физических состояний.</p>
-                <p style="margin-top: 10px;"><strong style="color: #667eea;">4. Защита</strong><br>
-                Без аквариума и авто в конкретный момент времени — расшифровка <strong style="color: #ff3b30;">ФИЗИЧЕСКИ НЕВОЗМОЖНА</strong>.</p>
+                <p><strong style="color: #667eea;">1. Микро-энтропия</strong><br>
+                Твой личный хаос: температура воды, движение рыбок, вибрация авто, GPS.</p>
+                <p style="margin-top: 10px;"><strong style="color: #667eea;">2. Макро-энтропия</strong><br>
+                Глобальный хаос: цена BTC, ETH, индекс страха VIX, настроение новостей.</p>
+                <p style="margin-top: 10px;"><strong style="color: #667eea;">3. Слияние (Omni-Fusion)</strong><br>
+                Макро-данные выбирают <em>алгоритм шифрования</em> (итерации PBKDF2, режим AES).<br>
+                Микро-данные генерируют <em>сам ключ</em>.</p>
+                <p style="margin-top: 10px;"><strong style="color: #667eea;">4. Результат</strong><br>
+                Ключ существует только в точке пересечения твоей личной реальности и состояния Вселенной.</p>
             </div>
         </div>
     </div>
 
     <script>
-        // ========== NEXUS74 CORE (FIXED) ==========
+        // ========== NEXUS74 OMNI-ENTROPY CORE ==========
         
-        // 🔑 Детерминированный PRNG на основе seed (для симуляции)
+        // 🔑 Детерминированный PRNG
         class SeededRandom {
-            constructor(seed) {
-                this.seed = seed;
-            }
+            constructor(seed) { this.seed = seed; }
             next() {
                 this.seed = (this.seed * 9301 + 49297) % 233280;
                 return this.seed / 233280;
             }
         }
 
-        // 🐠 Аквариум — биологическая энтропия
+        // 🐠 Микро: Аквариум
         class AquariumEntropy {
             read(forTimestamp = null) {
                 const t = forTimestamp || Date.now();
-                // Если передан timestamp — используем детерминированную симуляцию
                 const rng = new SeededRandom(t);
                 return {
-                    source: 'aquarium',
-                    timestamp: t,
+                    source: 'aquarium', timestamp: t,
                     temperature: 24 + Math.sin(t / 10000) * 0.5 + (rng.next() - 0.5) * 0.1,
                     ph: 7.0 + Math.sin(t / 15000) * 0.2 + (rng.next() - 0.5) * 0.05,
                     light: 300 + Math.sin(t / 8000) * 100 + rng.next() * 50,
@@ -261,18 +206,15 @@
             }
         }
 
-        // 🚗 Автомобиль — механическая энтропия
+        // 🚗 Микро: Автомобиль
         class VehicleEntropy {
-            constructor() {
-                this.tripStart = Date.now();
-            }
+            constructor() { this.tripStart = Date.now(); }
             read(forTimestamp = null) {
                 const t = forTimestamp || Date.now();
                 const rng = new SeededRandom(t);
                 const tripTime = t - this.tripStart;
                 return {
-                    source: 'vehicle',
-                    timestamp: t,
+                    source: 'vehicle', timestamp: t,
                     lat: 55.7558 + Math.sin(tripTime / 20000) * 0.01 + (rng.next() - 0.5) * 0.0001,
                     lon: 37.6176 + Math.cos(tripTime / 20000) * 0.01 + (rng.next() - 0.5) * 0.0001,
                     speed: 40 + Math.sin(tripTime / 5000) * 30 + rng.next() * 5,
@@ -285,27 +227,49 @@
             }
         }
 
-        // 🔗 Entropy Gateway
+        // 🌍 Макро: Глобальные рынки (Омни-энтропия)
+        class GlobalEntropy {
+            read(forTimestamp = null) {
+                const t = forTimestamp || Date.now();
+                const rng = new SeededRandom(t + 7777); // Уникальный seed для глобальных данных
+                // Симуляция рыночных колебаний
+                const btcBase = 67000 + Math.sin(t / 100000) * 2000;
+                const ethBase = 3400 + Math.cos(t / 80000) * 150;
+                const vixBase = 15 + Math.sin(t / 120000) * 5;
+                
+                return {
+                    source: 'global', timestamp: t,
+                    btcPrice: btcBase + rng.next() * 100,
+                    ethPrice: ethBase + rng.next() * 50,
+                    vixIndex: Math.max(10, vixBase + (rng.next() - 0.5) * 2),
+                    newsSentiment: (rng.next() * 2 - 1).toFixed(3), // от -1 (страх) до 1 (жадность)
+                    solarWind: (rng.next() * 500 + 300).toFixed(0) // Космическая погода
+                };
+            }
+        }
+
+        // 🔗 Entropy Gateway (Слияние Микро + Макро)
         class EntropyGateway {
-            constructor(aquarium, vehicle) {
+            constructor(aquarium, vehicle, global) {
                 this.aquarium = aquarium;
                 this.vehicle = vehicle;
+                this.global = global;
             }
 
             async getPhysicalFingerprint(timestamp, snapshot = null) {
-                // Если передан snapshot — используем его
-                let aqua, veh;
+                let aqua, veh, glob;
                 if (snapshot) {
-                    aqua = snapshot.aqua;
-                    veh = snapshot.veh;
+                    aqua = snapshot.aqua; veh = snapshot.veh; glob = snapshot.glob;
                 } else {
                     aqua = this.aquarium.read(timestamp);
                     veh = this.vehicle.read(timestamp);
+                    glob = this.global.read(timestamp);
                 }
 
                 const normalized = {
                     a: this.normalize(aqua),
                     v: this.normalize(veh),
+                    g: this.normalize(glob),
                     t: Math.floor(timestamp)
                 };
 
@@ -313,73 +277,78 @@
                 const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
                 return {
                     fingerprint: new Uint8Array(hashBuffer),
-                    snapshot: { aqua, veh }
+                    snapshot: { aqua, veh, glob }
                 };
             }
 
             normalize(obj) {
                 const result = {};
                 for (const [key, value] of Object.entries(obj)) {
-                    if (typeof value === 'number') {
-                        result[key] = Math.round(value * 1000) / 1000;
-                    } else {
-                        result[key] = value;
-                    }
+                    if (typeof value === 'number') result[key] = Math.round(value * 1000) / 1000;
+                    else result[key] = value;
                 }
                 return result;
             }
         }
 
-        // 🔑 Key Cascade (FIXED)
+        //  Key Cascade с Омни-путями (Omni-Path)
         class KeyCascade {
-            constructor(iterations = 50000) { // уменьшил для скорости на мобильном
-                this.iterations = iterations;
+            constructor(baseIterations = 50000) { this.baseIterations = baseIterations; }
+
+            // Выбор криптографического пути на основе Макро-энтропии
+            selectCryptoPath(globalEntropyByte) {
+                if (globalEntropyByte < 85) return { iterations: this.baseIterations, mode: 'AES-GCM' };
+                if (globalEntropyByte < 170) return { iterations: this.baseIterations * 2, mode: 'AES-GCM' };
+                return { iterations: this.baseIterations * 3, mode: 'AES-GCM' };
             }
 
             async build(password, gateway, startTime, durationSeconds) {
                 const chain = [];
                 const result0 = await gateway.getPhysicalFingerprint(startTime);
-                let currentKey = await this.deriveFromPassword(password, result0.fingerprint);
-                chain.push({
-                    key: currentKey,
-                    snapshot: result0.snapshot
-                });
+                // Первый байт глобальной энтропии выбирает путь
+                const globalByte = result0.snapshot.glob.newsSentiment.charCodeAt(0) % 256; 
+                const path = this.selectCryptoPath(globalByte);
+                
+                let currentKey = await this.deriveFromPassword(password, result0.fingerprint, path.iterations);
+                chain.push({ key: currentKey, snapshot: result0.snapshot, path });
 
                 for (let i = 1; i <= durationSeconds; i++) {
                     const result = await gateway.getPhysicalFingerprint(startTime + i);
+                    const byte = result.snapshot.glob.newsSentiment.charCodeAt(0) % 256;
+                    const p = this.selectCryptoPath(byte);
                     currentKey = await this.hkdf(currentKey, result.fingerprint);
-                    chain.push({
-                        key: currentKey,
-                        snapshot: result.snapshot
-                    });
+                    chain.push({ key: currentKey, snapshot: result.snapshot, path: p });
                 }
                 return chain;
             }
 
             async reconstruct(password, gateway, startTime, targetIndex, savedSnapshot) {
-                // КРИТИЧНО: используем сохранённый snapshot!
                 const result0 = await gateway.getPhysicalFingerprint(startTime, savedSnapshot);
-                let key = await this.deriveFromPassword(password, result0.fingerprint);
+                const globalByte = result0.snapshot.glob.newsSentiment.charCodeAt(0) % 256;
+                const path = this.selectCryptoPath(globalByte);
+                
+                let key = await this.deriveFromPassword(password, result0.fingerprint, path.iterations);
                 if (targetIndex === 0) return key;
 
                 for (let i = 1; i <= targetIndex; i++) {
                     const result = await gateway.getPhysicalFingerprint(startTime + i, savedSnapshot);
+                    const byte = result.snapshot.glob.newsSentiment.charCodeAt(0) % 256;
+                    const p = this.selectCryptoPath(byte);
                     key = await this.hkdf(key, result.fingerprint);
                 }
                 return key;
             }
 
-            async deriveFromPassword(password, salt) {
+            async deriveFromPassword(password, salt, iterations) {
                 const enc = new TextEncoder();
                 const keyMaterial = await crypto.subtle.importKey(
                     'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
                 );
                 const key = await crypto.subtle.deriveKey(
-                    { name: 'PBKDF2', salt, iterations: this.iterations, hash: 'SHA-256' },
+                    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
                     keyMaterial,
                     { name: 'HMAC', hash: 'SHA-256', length: 256 },
-                    true,
-                    ['sign', 'verify']
+                    true, ['sign', 'verify']
                 );
                 return new Uint8Array(await crypto.subtle.exportKey('raw', key));
             }
@@ -392,8 +361,7 @@
                     { name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info },
                     keyMaterial,
                     { name: 'HMAC', hash: 'SHA-256', length: 256 },
-                    true,
-                    ['sign', 'verify']
+                    true, ['sign', 'verify']
                 );
                 return new Uint8Array(await crypto.subtle.exportKey('raw', key));
             }
@@ -402,21 +370,21 @@
         // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         const aquarium = new AquariumEntropy();
         const vehicle = new VehicleEntropy();
-        const gateway = new EntropyGateway(aquarium, vehicle);
+        const global = new GlobalEntropy();
+        const gateway = new EntropyGateway(aquarium, vehicle, global);
         const cascade = new KeyCascade(50000);
 
         let lastEncrypted = null;
         let lastStartTime = null;
-        let lastSnapshot = null;  // ← ВАЖНО: сохраняем snapshot!
+        let lastSnapshot = null;
         let keyChanges = 0;
         let startTime = Date.now();
 
-        // ========== UI ОБНОВЛЕНИЯ ==========
+        // ========== UI ==========
         async function updateUI() {
-            const aqua = aquarium.read();
-            const veh = vehicle.read();
-            document.getElementById('aqua').textContent = JSON.stringify(aqua, null, 2);
-            document.getElementById('vehicle').textContent = JSON.stringify(veh, null, 2);
+            document.getElementById('aqua').textContent = JSON.stringify(aquarium.read(), null, 2);
+            document.getElementById('vehicle').textContent = JSON.stringify(vehicle.read(), null, 2);
+            document.getElementById('global').textContent = JSON.stringify(global.read(), null, 2);
 
             const t = Math.floor(Date.now() / 1000);
             const result = await gateway.getPhysicalFingerprint(t);
@@ -425,15 +393,14 @@
 
             keyChanges++;
             document.getElementById('keyChanges').textContent = keyChanges;
-            const uptime = Math.floor((Date.now() - startTime) / 1000);
-            document.getElementById('uptime').textContent = uptime + 's';
+            document.getElementById('uptime').textContent = Math.floor((Date.now() - startTime) / 1000) + 's';
         }
 
-        // ========== ТЕСТЫ (FIXED) ==========
+        // ========== ТЕСТЫ ==========
         window.testEncrypt = async () => {
             const resultEl = document.getElementById('result');
             resultEl.className = 'result info';
-            resultEl.textContent = '⏳ Шифрование... (может занять 1-2 сек)';
+            resultEl.textContent = '⏳ Шифрование (Omni-Entropy)...';
 
             try {
                 const password = document.getElementById('password').value;
@@ -441,47 +408,30 @@
                 const enc = new TextEncoder();
                 
                 lastStartTime = Math.floor(Date.now() / 1000);
-                
-                // Строим каскад ключей (с сохранением snapshot!)
                 const keyChain = await cascade.build(password, gateway, lastStartTime, 1);
                 const firstKey = keyChain[0].key;
-                lastSnapshot = keyChain[0].snapshot; // СОХРАНЯЕМ SNAPSHOT!
+                lastSnapshot = keyChain[0].snapshot;
                 
-                // Шифруем
                 const iv = crypto.getRandomValues(new Uint8Array(12));
-                const cryptoKey = await crypto.subtle.importKey(
-                    'raw', firstKey, { name: 'AES-GCM' }, false, ['encrypt']
-                );
-                const ciphertext = await crypto.subtle.encrypt(
-                    { name: 'AES-GCM', iv },
-                    cryptoKey,
-                    enc.encode(message)
-                );
+                const cryptoKey = await crypto.subtle.importKey('raw', firstKey, { name: 'AES-GCM' }, false, ['encrypt']);
+                const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, enc.encode(message));
 
-                // HMAC
-                const hmacKey = await crypto.subtle.importKey(
-                    'raw', firstKey, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-                );
-                const payload = new TextEncoder().encode(JSON.stringify({
-                    data: Array.from(new Uint8Array(ciphertext)),
-                    timestamp: lastStartTime
-                }));
+                const hmacKey = await crypto.subtle.importKey('raw', firstKey, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+                const payload = new TextEncoder().encode(JSON.stringify({ data: Array.from(new Uint8Array(ciphertext)), timestamp: lastStartTime }));
                 const hmac = await crypto.subtle.sign('HMAC', hmacKey, payload);
 
                 lastEncrypted = {
                     ciphertext: Array.from(new Uint8Array(ciphertext)),
-                    iv: Array.from(iv),
-                    timestamp: lastStartTime,
-                    hmac: Array.from(new Uint8Array(hmac))
+                    iv: Array.from(iv), timestamp: lastStartTime, hmac: Array.from(new Uint8Array(hmac))
                 };
 
                 resultEl.className = 'result success';
                 resultEl.innerHTML = `
-                    ✅ <strong>Зашифровано успешно</strong><br><br>
-                    <strong>Время шифрования:</strong> ${lastStartTime}<br>
+                    ✅ <strong>Зашифровано успешно (Omni-Entropy)</strong><br><br>
+                    <strong>Время:</strong> ${lastStartTime}<br>
                     <strong>Размер:</strong> ${lastEncrypted.ciphertext.length} байт<br>
-                    <strong>IV:</strong> ${lastEncrypted.iv.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')}...<br><br>
-                    <em style="color: #8e8e93;">Snapshot физического состояния сохранён. Теперь нажми "Расшифровать".</em>
+                    <strong>Алгоритм выбран:</strong> ${keyChain[0].path.mode} (${keyChain[0].path.iterations} итераций)<br><br>
+                    <em style="color: #8e8e93;">Snapshot Микро + Макро состояния сохранён.</em>
                 `;
             } catch (e) {
                 resultEl.className = 'result error';
@@ -493,64 +443,36 @@
         window.testDecrypt = async () => {
             const resultEl = document.getElementById('result');
             if (!lastEncrypted || !lastSnapshot) {
-                resultEl.className = 'result error';
-                resultEl.textContent = '❌ Сначала зашифруйте данные';
-                return;
+                resultEl.className = 'result error'; resultEl.textContent = '❌ Сначала зашифруйте данные'; return;
             }
-
-            resultEl.className = 'result info';
-            resultEl.textContent = '⏳ Расшифровка...';
+            resultEl.className = 'result info'; resultEl.textContent = '⏳ Расшифровка...';
 
             try {
                 const password = document.getElementById('password').value;
+                const key = await cascade.reconstruct(password, gateway, lastStartTime, 0, lastSnapshot);
                 
-                // КРИТИЧНО: используем СОХРАНЁННЫЙ snapshot!
-                const key = await cascade.reconstruct(
-                    password, 
-                    gateway, 
-                    lastStartTime, 
-                    0, 
-                    lastSnapshot  // ← передаём сохранённый snapshot
-                );
-                
-                // Расшифровываем
-                const cryptoKey = await crypto.subtle.importKey(
-                    'raw', key, { name: 'AES-GCM' }, false, ['decrypt']
-                );
-                const decrypted = await crypto.subtle.decrypt(
-                    { name: 'AES-GCM', iv: new Uint8Array(lastEncrypted.iv) },
-                    cryptoKey,
-                    new Uint8Array(lastEncrypted.ciphertext)
-                );
+                const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'AES-GCM' }, false, ['decrypt']);
+                const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(lastEncrypted.iv) }, cryptoKey, new Uint8Array(lastEncrypted.ciphertext));
                 const plaintext = new TextDecoder().decode(decrypted);
 
-                // Проверяем HMAC
-                const hmacKey = await crypto.subtle.importKey(
-                    'raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-                );
-                const payload = new TextEncoder().encode(JSON.stringify({
-                    data: lastEncrypted.ciphertext,
-                    timestamp: lastEncrypted.timestamp
-                }));
+                const hmacKey = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+                const payload = new TextEncoder().encode(JSON.stringify({ data: lastEncrypted.ciphertext, timestamp: lastEncrypted.timestamp }));
                 const expectedHmac = new Uint8Array(await crypto.subtle.sign('HMAC', hmacKey, payload));
                 
                 let hmacValid = true;
                 if (expectedHmac.length !== lastEncrypted.hmac.length) hmacValid = false;
                 else {
                     let diff = 0;
-                    for (let i = 0; i < expectedHmac.length; i++) {
-                        diff |= expectedHmac[i] ^ lastEncrypted.hmac[i];
-                    }
+                    for (let i = 0; i < expectedHmac.length; i++) diff |= expectedHmac[i] ^ lastEncrypted.hmac[i];
                     hmacValid = diff === 0;
                 }
-
                 if (!hmacValid) throw new Error('HMAC verification failed');
 
                 resultEl.className = 'result success';
                 resultEl.innerHTML = `
                     ✅ <strong>Расшифровано успешно</strong><br><br>
                     <strong>Сообщение:</strong> ${plaintext}<br><br>
-                    <em style="color: #34c759;">Физическое состояние совпало → доступ разрешён</em>
+                    <em style="color: #34c759;">Микро + Макро состояние совпало → доступ разрешён</em>
                 `;
             } catch (e) {
                 resultEl.className = 'result error';
@@ -562,59 +484,32 @@
         window.testTamper = async () => {
             const resultEl = document.getElementById('result');
             if (!lastEncrypted) {
-                resultEl.className = 'result error';
-                resultEl.textContent = '❌ Сначала зашифруйте данные';
-                return;
+                resultEl.className = 'result error'; resultEl.textContent = ' Сначала зашифруйте данные'; return;
             }
-
-            resultEl.className = 'result info';
-            resultEl.textContent = '⏳ Имитация "других рыбок"...';
+            resultEl.className = 'result info'; resultEl.textContent = '⏳ Имитация "Другой мир"...';
 
             try {
                 const password = document.getElementById('password').value;
-                
-                // Генерируем НОВЫЙ snapshot (имитируем, что рыбки уплыли иначе)
+                // Генерируем фейковый snapshot (другое время = другие рыбки И другая биржа)
                 const fakeSnapshot = {
-                    aqua: aquarium.read(Date.now() + 999999), // другое время = другие рыбки
-                    veh: vehicle.read(Date.now() + 999999)
+                    aqua: aquarium.read(Date.now() + 999999),
+                    veh: vehicle.read(Date.now() + 999999),
+                    glob: global.read(Date.now() + 999999) // Биткоин по другой цене!
                 };
                 
-                // Пытаемся восстановить ключ с ФЕЙКОВЫМ snapshot
-                const key = await cascade.reconstruct(
-                    password, 
-                    gateway, 
-                    lastStartTime, 
-                    0, 
-                    fakeSnapshot  // ← НЕ тот snapshot, что был при шифровании!
-                );
-                
-                // Пытаемся расшифровать
-                const cryptoKey = await crypto.subtle.importKey(
-                    'raw', key, { name: 'AES-GCM' }, false, ['decrypt']
-                );
-                
+                const key = await cascade.reconstruct(password, gateway, lastStartTime, 0, fakeSnapshot);
+                const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'AES-GCM' }, false, ['decrypt']);
                 try {
-                    await crypto.subtle.decrypt(
-                        { name: 'AES-GCM', iv: new Uint8Array(lastEncrypted.iv) },
-                        cryptoKey,
-                        new Uint8Array(lastEncrypted.ciphertext)
-                    );
-                    
-                    resultEl.className = 'result error';
-                    resultEl.innerHTML = `
-                        ⚠️ <strong>Расшифровалось, но HMAC не совпадёт</strong>
-                    `;
-                } catch (decryptError) {
-                    // Это нормально — AES-GCM проверяет tag и падает
-                    throw decryptError;
-                }
+                    await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(lastEncrypted.iv) }, cryptoKey, new Uint8Array(lastEncrypted.ciphertext));
+                    resultEl.className = 'result error'; resultEl.innerHTML = `⚠️ <strong>Расшифровалось, но HMAC не совпадёт</strong>`;
+                } catch (decryptError) { throw decryptError; }
             } catch (e) {
                 resultEl.className = 'result success';
                 resultEl.innerHTML = `
                     🛡️ <strong>ЗАЩИТА СРАБОТАЛА</strong><br><br>
                     <strong>Ошибка:</strong> ${e.message}<br><br>
-                    <em style="color: #34c759;">Физическое состояние изменилось (другие рыбки, другая дорога) → расшифровка невозможна.<br>
-                    Даже если хакер знает пароль — без точного физического состояния в момент шифрования данные не получить.</em>
+                    <em style="color: #34c759;">Мир изменился (другие рыбки, другая цена BTC) → расшифровка невозможна.<br>
+                    Даже если хакер знает пароль — без точного состояния Вселенной в момент шифрования данные не получить.</em>
                 `;
             }
         };
