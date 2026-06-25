@@ -3,1597 +3,395 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS74 ULTIMATE — Полная версия</title>
+    <title>NEXUS74 — Рабочая версия</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Arial, sans-serif;
+            font-family: -apple-system, Arial, sans-serif;
             background: #0a0a1a;
             color: #e0e0e0;
             padding: 16px;
-            min-height: 100vh;
         }
-        .container { max-width: 900px; margin: 0 auto; }
-        h1 {
-            font-size: 28px;
-            color: #667eea;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .subtitle { color: #8e8e93; font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+        .container { max-width: 700px; margin: 0 auto; }
+        h1 { color: #667eea; font-size: 24px; margin-bottom: 16px; }
         .panel {
             background: rgba(255,255,255,0.03);
             padding: 16px;
             border-radius: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             border: 1px solid rgba(255,255,255,0.06);
         }
-        .panel h3 {
-            font-size: 16px;
-            color: #667eea;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .fingerprint {
-            color: #34c759;
-            word-break: break-all;
-            font-size: 11px;
-            font-family: monospace;
-            background: rgba(52,199,89,0.05);
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 8px;
-            min-height: 40px;
-        }
-        .status { color: #ff9500; font-size: 12px; margin-top: 8px; }
+        .panel h3 { color: #667eea; margin-bottom: 10px; font-size: 15px; }
         pre {
             background: rgba(0,0,0,0.4);
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-size: 11px;
-            line-height: 1.5;
-            color: #a0a0a0;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-        input, select, textarea {
             padding: 10px;
-            border-radius: 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            max-height: 120px;
+            overflow: auto;
+            color: #a0a0a0;
+        }
+        .fp {
+            color: #34c759;
+            font-family: monospace;
+            font-size: 10px;
+            word-break: break-all;
+            background: rgba(52,199,89,0.05);
+            padding: 8px;
+            border-radius: 6px;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
             border: 1px solid rgba(255,255,255,0.1);
             background: rgba(255,255,255,0.05);
             color: #e0e0e0;
             font-size: 14px;
-            width: 100%;
         }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #667eea; }
-        textarea { min-height: 80px; resize: vertical; font-family: monospace; }
-        .mode-selector {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        .mode-btn {
-            padding: 12px 8px;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.03);
-            color: #8e8e93;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-            transition: all 0.3s;
-            text-align: center;
-        }
-        .mode-btn.active {
-            border-color: #34c759;
-            background: rgba(52,199,89,0.1);
-            color: #34c759;
-        }
-        .mode-btn:hover { border-color: #667eea; }
-        .button-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
+        textarea { min-height: 60px; resize: vertical; }
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex: 1;
-            min-width: 100px;
-        }
-        button:active { transform: scale(0.97); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        button.danger { background: linear-gradient(135deg, #ff3b30 0%, #ff6b35 100%); }
-        button.success { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); }
-        button.warning { background: linear-gradient(135deg, #ff9500 0%, #ff6b00 100%); }
-        button.small { flex: 0.5; min-width: 60px; padding: 8px 12px; font-size: 11px; }
-        .result {
-            margin-top: 12px;
+            width: 100%;
             padding: 12px;
-            border-radius: 8px;
-            background: rgba(255,255,255,0.03);
-            font-size: 12px;
-            line-height: 1.6;
-            min-height: 60px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .result.success { border-left: 3px solid #34c759; }
-        .result.error { border-left: 3px solid #ff3b30; }
-        .result.info { border-left: 3px solid #667eea; }
-        .result.warning { border-left: 3px solid #ff9500; }
-        .live-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background: #34c759;
-            border-radius: 50%;
-            margin-right: 6px;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-top: 12px;
-        }
-        .stat {
-            background: rgba(255,255,255,0.03);
-            padding: 10px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .stat .number { font-size: 18px; font-weight: 700; color: #667eea; }
-        .stat .label { font-size: 10px; color: #8e8e93; margin-top: 2px; }
-        .tag {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 10px;
+            margin-bottom: 6px;
+            border: none;
+            border-radius: 6px;
+            color: white;
             font-weight: 600;
-            background: rgba(102,126,234,0.15);
-            color: #667eea;
-            margin-left: 8px;
-        }
-        .tag.ru { background: rgba(52,199,89,0.15); color: #34c759; }
-        .tag.beta { background: rgba(255,149,0,0.15); color: #ff9500; }
-        .tag.premium { background: rgba(255,215,0,0.15); color: #ffd700; }
-        .strength-meter {
-            display: flex;
-            gap: 4px;
-            margin-top: 8px;
-        }
-        .strength-bar {
-            flex: 1;
-            height: 4px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            transition: all 0.3s;
-        }
-        .strength-bar.active { background: #34c759; }
-        .strength-bar.warning { background: #ff9500; }
-        .strength-bar.danger { background: #ff3b30; }
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
-        .tab {
-            padding: 8px 16px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
             cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-encrypt { background: #34c759; }
+        .btn-decrypt { background: #667eea; }
+        .btn-tamper { background: #ff3b30; }
+        .result {
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
             font-size: 12px;
-            font-weight: 600;
-            color: #8e8e93;
-            border: 1px solid transparent;
-            transition: all 0.3s;
+            line-height: 1.5;
         }
-        .tab.active {
-            background: rgba(102,126,234,0.15);
-            color: #667eea;
-            border-color: #667eea;
-        }
-        .tab:hover { background: rgba(255,255,255,0.08); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .biometric-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
+        .result.ok { background: rgba(52,199,89,0.1); border-left: 3px solid #34c759; }
+        .result.err { background: rgba(255,59,48,0.1); border-left: 3px solid #ff3b30; }
+        .result.info { background: rgba(102,126,234,0.1); border-left: 3px solid #667eea; }
+        .modes { display: flex; gap: 6px; margin-bottom: 10px; }
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
             background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            margin-top: 8px;
-        }
-        .biometric-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #ff3b30;
-            transition: all 0.3s;
-        }
-        .biometric-dot.active { background: #34c759; box-shadow: 0 0 10px #34c759; }
-        .key-rotation-info {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-            font-size: 12px;
+            border: 2px solid rgba(255,255,255,0.1);
             color: #8e8e93;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 11px;
         }
-        .key-rotation-info span strong { color: #e0e0e0; }
-        .telegram-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 8px;
-            margin-top: 8px;
-        }
-        @media (max-width: 600px) {
-            h1 { font-size: 22px; }
-            .mode-selector { grid-template-columns: 1fr; }
-            .button-group { flex-direction: column; }
-            button { width: 100%; }
-            .stats { grid-template-columns: repeat(2, 1fr); }
-            .tabs { flex-direction: column; }
-        }
+        .mode-btn.active { border-color: #34c759; color: #34c759; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔐 NEXUS74 ULTIMATE <span class="tag ru">РФ</span> <span class="tag premium">PREMIUM</span></h1>
-        <div class="subtitle">Омни-энтропийный протокол. Реальные API + Биометрия + Telegram + Ротация ключей</div>
+        <h1>🔐 NEXUS74</h1>
 
-        <!-- Вкладки -->
-        <div class="tabs">
-            <div class="tab active" data-tab="main">📊 Основное</div>
-            <div class="tab" data-tab="biometric">👆 Биометрия</div>
-            <div class="tab" data-tab="telegram">📱 Telegram</div>
-            <div class="tab" data-tab="export">💾 Экспорт/Импорт</div>
-            <div class="tab" data-tab="settings">⚙️ Настройки</div>
-        </div>
-
-        <!-- Вкладка 1: Основное -->
-        <div class="tab-content active" id="tab-main">
-            <div class="panel">
-                <h3><span class="live-indicator"></span>🐠 Аквариум (Микро)</h3>
-                <pre id="aqua">загрузка...</pre>
-            </div>
-
-            <div class="panel">
-                <h3><span class="live-indicator"></span>🚗 Автомобиль (Микро)</h3>
-                <pre id="vehicle">загрузка...</pre>
-            </div>
-
-            <div class="panel">
-                <h3><span class="live-indicator"></span>🇷🇺 Российские рынки (Макро) <span class="tag ru">MOEX</span></h3>
-                <pre id="global">загрузка...</pre>
-            </div>
-
-            <div class="panel">
-                <h3>🔑 Физический отпечаток P(t)</h3>
-                <div class="fingerprint" id="fingerprint">—</div>
-                <div class="status" id="fpStatus">⚡ Обновляется каждую секунду</div>
-                <div class="stats">
-                    <div class="stat"><div class="number" id="entropyRate">256</div><div class="label">бит (режим)</div></div>
-                    <div class="stat"><div class="number" id="keyChanges">0</div><div class="label">смен ключа</div></div>
-                    <div class="stat"><div class="number" id="uptime">0s</div><div class="label">аптайм</div></div>
-                    <div class="stat"><div class="number" id="rotations">0</div><div class="label">ротаций</div></div>
-                </div>
-            </div>
-
-            <div class="panel">
-                <h3>🛡️ Выбор режима шифрования</h3>
-                <div class="mode-selector">
-                    <button class="mode-btn active" id="mode-standard" onclick="setMode('standard')">
-                        🟢 Стандарт<br>256 бит<br><small>Мгновенно</small>
-                    </button>
-                    <button class="mode-btn" id="mode-paranoid" onclick="setMode('paranoid')">
-                        🟡 Параноик<br>1024 бита<br><small>2-3 сек</small>
-                    </button>
-                    <button class="mode-btn" id="mode-absolute" onclick="setMode('absolute')">
-                        🔴 Абсолют<br>∞ бит (OTP)<br><small>Зависит от размера</small>
-                    </button>
-                </div>
-                <div class="strength-meter" id="strengthMeter">
-                    <div class="strength-bar active"></div>
-                    <div class="strength-bar"></div>
-                    <div class="strength-bar"></div>
-                    <div class="strength-bar"></div>
-                </div>
-                <div style="font-size: 11px; color: #8e8e93; margin-top: 8px;" id="modeDescription">
-                    Стандартный режим: AES-256 с физической привязкой.
-                </div>
-            </div>
-
-            <div class="panel">
-                <h3>🧪 Тест шифрования</h3>
-                <div class="input-group">
-                    <input id="password" type="password" placeholder="Мастер-пароль" value="demo2026">
-                    <textarea id="message" placeholder="Секретное сообщение">челябинск</textarea>
-                </div>
-                <div class="button-group">
-                    <button onclick="testEncrypt()" class="success" id="encryptBtn">🔒 Зашифровать</button>
-                    <button onclick="testDecrypt()" id="decryptBtn">🔓 Расшифровать</button>
-                    <button onclick="testTamper()" class="danger">⚠️ Чужие рыбки + Рынки</button>
-                </div>
-                <div class="result info" id="result">Выберите режим и нажмите "Зашифровать"</div>
-            </div>
-        </div>
-
-        <!-- Вкладка 2: Биометрия -->
-        <div class="tab-content" id="tab-biometric">
-            <div class="panel">
-                <h3>👆 Биометрическая аутентификация</h3>
-                <div class="biometric-status" id="biometricStatus">
-                    <div class="biometric-dot" id="biometricDot"></div>
-                    <span id="biometricText">Биометрия не активирована</span>
-                </div>
-                <div class="button-group">
-                    <button onclick="registerBiometric()" class="success" id="bioRegisterBtn">📝 Зарегистрировать</button>
-                    <button onclick="authenticateBiometric()" id="bioAuthBtn">🔐 Аутентифицироваться</button>
-                    <button onclick="clearBiometric()" class="danger small">🗑️ Очистить</button>
-                </div>
-                <div class="result info" id="bioResult">Зарегистрируйте биометрию для усиления защиты</div>
-                <div style="font-size: 11px; color: #8e8e93; margin-top: 8px;">
-                    <strong>Как работает:</strong> Биометрический ключ смешивается с физическим отпечатком.<br>
-                    Без вашего лица/отпечатка пальца расшифровка невозможна, даже если есть пароль и датчики.
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка 3: Telegram -->
-        <div class="tab-content" id="tab-telegram">
-            <div class="panel">
-                <h3>📱 Telegram-бот</h3>
-                <div class="telegram-status" id="telegramStatus">
-                    <span class="live-indicator" style="background: #ff3b30;" id="telegramDot"></span>
-                    <span id="telegramText">Бот не подключён</span>
-                </div>
-                <div class="input-group">
-                    <input id="telegramToken" type="text" placeholder="Bot Token (от @BotFather)" value="">
-                    <input id="telegramChatId" type="text" placeholder="Chat ID (ваш ID в Telegram)" value="">
-                    <textarea id="telegramMessage" placeholder="Сообщение для отправки в Telegram">Шифрование NEXUS74 активировано! Ключ: {key}</textarea>
-                </div>
-                <div class="button-group">
-                    <button onclick="connectTelegram()" class="success" id="telegramConnectBtn">🔗 Подключить бота</button>
-                    <button onclick="sendTelegramMessage('Тестовое сообщение от NEXUS74')" id="telegramSendBtn">📤 Отправить тест</button>
-                    <button onclick="sendEncryptedTelegram()" id="telegramEncryptSend">🔒 Отправить шифрованное</button>
-                </div>
-                <div class="result info" id="telegramResult">Подключите бота для отправки уведомлений</div>
-                <div style="font-size: 11px; color: #8e8e93; margin-top: 8px;">
-                    <strong>Инструкция:</strong> 1) Напишите @BotFather → /newbot → получите токен.<br>
-                    2) Напишите @userinfobot → получите Chat ID.<br>
-                    3) Вставьте данные выше и нажмите "Подключить".
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка 4: Экспорт/Импорт -->
-        <div class="tab-content" id="tab-export">
-            <div class="panel">
-                <h3>💾 Экспорт и импорт ключей</h3>
-                <div class="button-group">
-                    <button onclick="exportKeys()" class="success">📤 Экспортировать ключи</button>
-                    <button onclick="document.getElementById('importInput').click()" class="warning">📥 Импортировать ключи</button>
-                    <input type="file" id="importInput" style="display:none" accept=".json" onchange="importKeys(event)">
-                </div>
-                <div class="result info" id="exportResult">Экспортируйте ключи для резервного копирования</div>
-                <div style="font-size: 11px; color: #8e8e93; margin-top: 8px;">
-                    <strong>Внимание:</strong> Экспортируйте ключи в защищённое место.<br>
-                    Без ключей расшифровка данных будет невозможна.
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка 5: Настройки -->
-        <div class="tab-content" id="tab-settings">
-            <div class="panel">
-                <h3>⚙️ Настройки системы</h3>
-                <div class="input-group">
-                    <label style="font-size: 12px; color: #8e8e93;">Автоматическая ротация ключей</label>
-                    <select id="rotationInterval" onchange="updateRotationSettings()">
-                        <option value="0">Отключена</option>
-                        <option value="60">Каждую минуту</option>
-                        <option value="300" selected>Каждые 5 минут</option>
-                        <option value="900">Каждые 15 минут</option>
-                        <option value="3600">Каждый час</option>
-                        <option value="86400">Каждый день</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label style="font-size: 12px; color: #8e8e93;">Количество итераций PBKDF2</label>
-                    <select id="pbkdf2Iterations" onchange="updateRotationSettings()">
-                        <option value="50000">50 000 (быстро)</option>
-                        <option value="200000" selected>200 000 (рекомендуется)</option>
-                        <option value="500000">500 000 (медленно)</option>
-                        <option value="1000000">1 000 000 (максимум)</option>
-                    </select>
-                </div>
-                <div class="input-group">
-                    <label style="font-size: 12px; color: #8e8e93;">Источники энтропии</label>
-                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-                        <label><input type="checkbox" id="srcAqua" checked> Аквариум</label>
-                        <label><input type="checkbox" id="srcVehicle" checked> Автомобиль</label>
-                        <label><input type="checkbox" id="srcMarket" checked> MOEX</label>
-                        <label><input type="checkbox" id="srcBiometric" checked> Биометрия</label>
-                    </div>
-                </div>
-                <div class="key-rotation-info" id="rotationInfo">
-                    <span><strong>Ротация:</strong> Отключена</span>
-                    <span><strong>Итерации:</strong> 200 000</span>
-                    <span><strong>Следующая ротация:</strong> —</span>
-                </div>
-                <div class="button-group">
-                    <button onclick="manualRotate()" class="warning">🔄 Ротация сейчас</button>
-                    <button onclick="resetAll()" class="danger">⚠️ Сбросить всё</button>
-                </div>
-                <div class="result info" id="settingsResult">Настройки применены</div>
-            </div>
-        </div>
-
-        <!-- О протоколе -->
         <div class="panel">
-            <h3>📖 Что добавлено</h3>
-            <div style="font-size: 13px; line-height: 1.7; color: #c0c0c0;">
-                <p>✅ <strong style="color: #34c759;">Реальные API</strong> — MOEX, ЦБ РФ, погода в Челябинске</p>
-                <p>✅ <strong style="color: #667eea;">Биометрия</strong> — WebAuthn (отпечаток пальца / Face ID)</p>
-                <p>✅ <strong style="color: #ff9500;">Telegram-бот</strong> — уведомления о шифровании и ротации</p>
-                <p>✅ <strong style="color: #ff6b35;">Экспорт/Импорт</strong> — резервное копирование ключей</p>
-                <p>✅ <strong style="color: #ff3b30;">Автоматическая ротация</strong> — ключи обновляются по расписанию</p>
-                <p>✅ <strong style="color: #34c759;">Гибкие настройки</strong> — итерации, источники энтропии</p>
+            <h3>🐠 Аквариум</h3>
+            <pre id="aqua">...</pre>
+        </div>
+
+        <div class="panel">
+            <h3>🚗 Автомобиль</h3>
+            <pre id="veh">...</pre>
+        </div>
+
+        <div class="panel">
+            <h3>🇷🇺 MOEX</h3>
+            <pre id="moex">...</pre>
+        </div>
+
+        <div class="panel">
+            <h3>🔑 Отпечаток P(t)</h3>
+            <div class="fp" id="fp">—</div>
+        </div>
+
+        <div class="panel">
+            <h3>🛡️ Режим</h3>
+            <div class="modes">
+                <div class="mode-btn active" onclick="setMode('std', this)">🟢 256 бит</div>
+                <div class="mode-btn" onclick="setMode('par', this)">🟡 1024 бит</div>
+                <div class="mode-btn" onclick="setMode('otp', this)">🔴 OTP</div>
             </div>
+        </div>
+
+        <div class="panel">
+            <h3>🧪 Тест</h3>
+            <input id="pwd" type="password" value="demo2026" placeholder="Пароль">
+            <textarea id="msg" placeholder="Сообщение">челябинск</textarea>
+            <button class="btn-encrypt" onclick="doEncrypt()">🔒 Зашифровать</button>
+            <button class="btn-decrypt" onclick="doDecrypt()">🔓 Расшифровать</button>
+            <button class="btn-tamper" onclick="doTamper()">⚠️ Атака</button>
+            <div class="result info" id="res">Готов</div>
         </div>
     </div>
 
     <script>
-    // ================================================================
-    //              NEXUS74 ULTIMATE — ПОЛНАЯ ВЕРСИЯ
-    // ================================================================
+    // ===== ГЛОБАЛЬНЫЕ =====
+    let mode = 'std';
+    let lastEnc = null;
 
-    // ---------- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ----------
-    let currentMode = 'standard';
-    let keyChanges = 0;
-    let rotations = 0;
-    let startTime = Date.now();
-    let lastEncrypted = null;
-    let biometricKey = null;
-    let biometricRegistered = false;
-    let telegramConnected = false;
-    let telegramToken = '';
-    let telegramChatId = '';
-    let rotationInterval = null;
-    let rotationTimer = null;
-    let exportedKeys = null;
-
-    // ---------- ДЕТЕРМИНИРОВАННЫЙ PRNG ----------
-    class SeededRandom {
-        constructor(seed) { this.seed = seed; }
-        next() {
-            this.seed = (this.seed * 9301 + 49297) % 233280;
-            return this.seed / 233280;
-        }
+    // ===== PRNG =====
+    function rng(seed) {
+        let s = seed;
+        return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
     }
 
-    // ---------- РЕАЛЬНЫЙ API ДЛЯ MOEX ----------
-    class RealMOEXAPI {
-        async read() {
-            try {
-                // MOEX API для индекса и акций
-                const [sberResp, indexResp, cbrResp] = await Promise.all([
-                    fetch('https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER.json'),
-                    fetch('https://iss.moex.com/iss/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json'),
-                    fetch('https://www.cbr-xml-daily.ru/daily_json.js')
-                ]);
-
-                const sberData = await sberResp.json();
-                const indexData = await indexResp.json();
-                const cbrData = await cbrResp.json();
-
-                return {
-                    source: 'moex',
-                    timestamp: Date.now(),
-                    sberPrice: sberData.marketdata?.data?.[0]?.[2] || 270 + Math.random() * 10,
-                    moexIndex: indexData.marketdata?.data?.[0]?.[2] || 3200 + Math.random() * 50,
-                    usdRubRate: cbrData.Valute?.USD?.Value || 92 + Math.random() * 2,
-                    eurRubRate: cbrData.Valute?.EUR?.Value || 100 + Math.random() * 2,
-                    goldPrice: 6500 + Math.random() * 100,
-                    newsSentiment: (Math.random() * 2 - 1).toFixed(3),
-                    oilPrice: 75 + Math.random() * 5
-                };
-            } catch (e) {
-                console.warn('MOEX API error, using fallback:', e);
-                // Fallback с детерминированной симуляцией
-                const t = Date.now();
-                const rng = new SeededRandom(t + 7777);
-                return {
-                    source: 'moex_fallback',
-                    timestamp: t,
-                    sberPrice: 270 + Math.sin(t / 100000) * 10 + rng.next() * 5,
-                    moexIndex: 3200 + Math.cos(t / 80000) * 50 + rng.next() * 20,
-                    usdRubRate: 92 + Math.sin(t / 120000) * 2 + (rng.next() - 0.5) * 0.5,
-                    eurRubRate: 100 + Math.sin(t / 130000) * 3 + (rng.next() - 0.5) * 0.5,
-                    goldPrice: 6500 + Math.sin(t / 150000) * 100 + rng.next() * 50,
-                    newsSentiment: (rng.next() * 2 - 1).toFixed(3),
-                    oilPrice: 75 + Math.sin(t / 200000) * 5 + rng.next() * 3
-                };
-            }
-        }
-    }
-
-    // ---------- ПОГОДА В ЧЕЛЯБИНСКЕ ----------
-    class WeatherAPI {
-        async read() {
-            try {
-                const resp = await fetch('https://api.openweathermap.org/data/2.5/weather?q=Chelyabinsk&appid=bd5e378503939ddaee76f32ad7a9d299&units=metric');
-                const data = await resp.json();
-                return {
-                    source: 'weather',
-                    timestamp: Date.now(),
-                    temperature: data.main?.temp || -5 + Math.random() * 10,
-                    pressure: data.main?.pressure || 750 + Math.random() * 20,
-                    humidity: data.main?.humidity || 70 + Math.random() * 20,
-                    wind: data.wind?.speed || 3 + Math.random() * 5,
-                    clouds: data.clouds?.all || 50 + Math.random() * 50
-                };
-            } catch (e) {
-                console.warn('Weather API error, using fallback:', e);
-                const t = Date.now();
-                const rng = new SeededRandom(t + 999);
-                return {
-                    source: 'weather_fallback',
-                    timestamp: t,
-                    temperature: -5 + Math.sin(t / 3600000) * 15 + rng.next() * 5,
-                    pressure: 750 + Math.sin(t / 7200000) * 10 + rng.next() * 5,
-                    humidity: 70 + Math.sin(t / 1800000) * 15 + rng.next() * 10,
-                    wind: 3 + Math.sin(t / 900000) * 4 + rng.next() * 2,
-                    clouds: 50 + Math.sin(t / 3600000) * 40 + rng.next() * 10
-                };
-            }
-        }
-    }
-
-    // ---------- МИКРО: АКВАРИУМ ----------
-    class AquariumEntropy {
-        read(forTimestamp = null) {
-            const t = forTimestamp || Date.now();
-            const rng = new SeededRandom(t);
-            return {
-                source: 'aquarium',
-                timestamp: t,
-                temperature: 24 + Math.sin(t / 10000) * 0.5 + (rng.next() - 0.5) * 0.1,
-                ph: 7.0 + Math.sin(t / 15000) * 0.2 + (rng.next() - 0.5) * 0.05,
-                light: 300 + Math.sin(t / 8000) * 100 + rng.next() * 50,
-                vibration: Math.abs(Math.sin(t / 500)) * 0.05 + rng.next() * 0.02,
-                sound: 40 + rng.next() * 15,
-                fishMotion: Array.from({length: 16}, () => Math.floor(rng.next() * 256))
-            };
-        }
-    }
-
-    // ---------- МИКРО: АВТОМОБИЛЬ ----------
-    class VehicleEntropy {
-        constructor() { this.tripStart = Date.now(); }
-        read(forTimestamp = null) {
-            const t = forTimestamp || Date.now();
-            const rng = new SeededRandom(t);
-            const tripTime = t - this.tripStart;
-            return {
-                source: 'vehicle',
-                timestamp: t,
-                lat: 55.7558 + Math.sin(tripTime / 20000) * 0.01 + (rng.next() - 0.5) * 0.0001,
-                lon: 37.6176 + Math.cos(tripTime / 20000) * 0.01 + (rng.next() - 0.5) * 0.0001,
-                speed: 40 + Math.sin(tripTime / 5000) * 30 + rng.next() * 5,
-                rpm: 2000 + Math.sin(tripTime / 3000) * 1500 + rng.next() * 100,
-                vibration: Math.abs(Math.sin(tripTime / 400)) * 0.2 + rng.next() * 0.05,
-                tilt: Math.sin(tripTime / 6000) * 3 + (rng.next() - 0.5) * 0.5,
-                engineTemp: 85 + Math.sin(tripTime / 30000) * 5,
-                throttle: Math.max(0, Math.sin(tripTime / 2500) * 50 + 30 + rng.next() * 10)
-            };
-        }
-    }
-
-    // ---------- ENTROPY GATEWAY ----------
-    class EntropyGateway {
-        constructor(aquarium, vehicle, market, weather) {
-            this.aquarium = aquarium;
-            this.vehicle = vehicle;
-            this.market = market;
-            this.weather = weather;
-            this.sources = ['aqua', 'veh', 'market', 'weather'];
-        }
-
-        async getPhysicalFingerprint(timestamp, snapshot = null) {
-            let aqua, veh, market, weather;
-            if (snapshot) {
-                aqua = snapshot.aqua;
-                veh = snapshot.veh;
-                market = snapshot.market;
-                weather = snapshot.weather;
-            } else {
-                aqua = this.aquarium.read(timestamp);
-                veh = this.vehicle.read(timestamp);
-                market = await this.market.read();
-                weather = await this.weather.read();
-            }
-
-            // Проверяем, какие источники включены
-            const useSources = {
-                aqua: document.getElementById('srcAqua').checked,
-                veh: document.getElementById('srcVehicle').checked,
-                market: document.getElementById('srcMarket').checked,
-                biometric: document.getElementById('srcBiometric').checked
-            };
-
-            let combined = {};
-            if (useSources.aqua) combined.a = this.normalize(aqua);
-            if (useSources.veh) combined.v = this.normalize(veh);
-            if (useSources.market) combined.m = this.normalize(market);
-            if (useSources.biometric && biometricKey) {
-                combined.b = Array.from(biometricKey);
-            }
-
-            // Добавляем погоду всегда (важный источник)
-            combined.w = this.normalize(weather);
-            combined.t = Math.floor(timestamp);
-
-            const encoded = new TextEncoder().encode(JSON.stringify(combined));
-            const hashBuffer = await crypto.subtle.digest('SHA-512', encoded);
-            return {
-                fingerprint: new Uint8Array(hashBuffer),
-                snapshot: { aqua, veh, market, weather }
-            };
-        }
-
-        normalize(obj) {
-            const result = {};
-            for (const [key, value] of Object.entries(obj)) {
-                if (typeof value === 'number') result[key] = Math.round(value * 1000) / 1000;
-                else result[key] = value;
-            }
-            return result;
-        }
-    }
-
-    // ================================================================
-    //              КРИПТОГРАФИЧЕСКОЕ ЯДРО
-    // ================================================================
-
-    class NexusCrypto {
-        constructor(gateway) {
-            this.gateway = gateway;
-            this.iterations = 200000;
-        }
-
-        async deriveKey(password, salt, length = 32) {
-            const enc = new TextEncoder();
-            const keyMaterial = await crypto.subtle.importKey(
-                'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
-            );
-            const key = await crypto.subtle.deriveKey(
-                { name: 'PBKDF2', salt, iterations: this.iterations, hash: 'SHA-512' },
-                keyMaterial,
-                { name: 'AES-GCM', length: length * 8 },
-                true, ['encrypt', 'decrypt']
-            );
-            return new Uint8Array(await crypto.subtle.exportKey('raw', key));
-        }
-
-        async encrypt256(data, password, timestamp, snapshot) {
-            const result = await this.gateway.getPhysicalFingerprint(timestamp, snapshot);
-            const key = await this.deriveKey(password, result.fingerprint);
-            
-            const iv = crypto.getRandomValues(new Uint8Array(12));
-            const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'AES-GCM' }, false, ['encrypt']);
-            const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, data);
-
-            return {
-                ciphertext: new Uint8Array(ciphertext),
-                iv,
-                timestamp,
-                snapshot: result.snapshot,
-                mode: 'standard',
-                bits: 256
-            };
-        }
-
-        async encrypt1024(data, password, timestamp, snapshot) {
-            let currentData = data;
-            const layers = [];
-            const saltModifiers = ['aquarium_layer1', 'vehicle_layer2', 'market_layer3', 'cosmic_layer4'];
-            
-            for (let i = 0; i < 4; i++) {
-                const layerTimestamp = timestamp + i;
-                const result = await this.gateway.getPhysicalFingerprint(layerTimestamp, snapshot);
-                const key = await this.deriveKey(password + saltModifiers[i], result.fingerprint);
-                
-                const iv = crypto.getRandomValues(new Uint8Array(12));
-                const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'AES-GCM' }, false, ['encrypt']);
-                currentData = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, currentData);
-                
-                layers.push({ iv, timestamp: layerTimestamp, snapshot: result.snapshot });
-            }
-
-            return {
-                ciphertext: new Uint8Array(currentData),
-                layers,
-                mode: 'paranoid',
-                bits: 1024
-            };
-        }
-
-        async encryptOTP(data, password, timestamp, snapshot) {
-            const keyLength = data.length;
-            const key = new Uint8Array(keyLength);
-            
-            const enc = new TextEncoder();
-            const passwordHash = await crypto.subtle.digest('SHA-512', enc.encode(password));
-            const passwordBytes = new Uint8Array(passwordHash);
-            
-            let entropyIndex = 0;
-            const entropySources = [
-                ...snapshot.aqua.fishMotion,
-                ...Object.values(snapshot.veh).filter(v => typeof v === 'number').map(v => Math.floor(v * 1000) % 256),
-                ...Object.values(snapshot.market).filter(v => typeof v === 'number').map(v => Math.floor(v * 100) % 256),
-                ...Object.values(snapshot.weather).filter(v => typeof v === 'number').map(v => Math.floor(v * 100) % 256),
-                ...passwordBytes
-            ];
-            
-            if (biometricKey) {
-                entropySources.push(...biometricKey);
-            }
-            
-            for (let i = 0; i < keyLength; i++) {
-                if (entropyIndex < entropySources.length) {
-                    key[i] = entropySources[entropyIndex] % 256;
-                    entropyIndex++;
-                } else {
-                    const rng = new SeededRandom(timestamp * 1000 + i + passwordBytes[0]);
-                    key[i] = Math.floor(rng.next() * 256);
-                }
-            }
-
-            const ciphertext = new Uint8Array(keyLength);
-            for (let i = 0; i < keyLength; i++) {
-                ciphertext[i] = data[i] ^ key[i];
-            }
-
-            // HMAC для проверки целостности
-            const hmacKey = await crypto.subtle.importKey(
-                'raw', passwordBytes.slice(0, 32), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-            );
-            const hmacPayload = new Uint8Array([...ciphertext, ...key.slice(0, 32)]);
-            const hmac = await crypto.subtle.sign('HMAC', hmacKey, hmacPayload);
-
-            return {
-                ciphertext,
-                hmac: new Uint8Array(hmac),
-                timestamp,
-                snapshot,
-                mode: 'absolute',
-                bits: keyLength * 8,
-                keyLength
-            };
-        }
-
-        async decrypt(encrypted, password) {
-            if (encrypted.mode === 'standard') {
-                const result = await this.gateway.getPhysicalFingerprint(encrypted.timestamp, encrypted.snapshot);
-                const key = await this.deriveKey(password, result.fingerprint);
-                
-                const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'AES-GCM' }, false, ['decrypt']);
-                const decrypted = await crypto.subtle.decrypt(
-                    { name: 'AES-GCM', iv: encrypted.iv },
-                    cryptoKey,
-                    encrypted.ciphertext
-                );
-                
-                return { data: new Uint8Array(decrypted), mode: 'standard', bits: 256 };
-            }
-            
-            else if (encrypted.mode === 'paranoid') {
-                let currentData = encrypted.ciphertext;
-                const saltModifiers = ['aquarium_layer1', 'vehicle_layer2', 'market_layer3', 'cosmic_layer4'];
-                
-                for (let i = 3; i >= 0; i--) {
-                    const layer = encrypted.layers[i];
-                    const result = await this.gateway.getPhysicalFingerprint(layer.timestamp, layer.snapshot);
-                    const key = await this.deriveKey(password + saltModifiers[i], result.fingerprint);
-                    
-                    const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'AES-GCM' }, false, ['decrypt']);
-                    currentData = await crypto.subtle.decrypt(
-                        { name: 'AES-GCM', iv: layer.iv },
-                        cryptoKey,
-                        currentData
-                    );
-                }
-                
-                return { data: new Uint8Array(currentData), mode: 'paranoid', bits: 1024 };
-            }
-            
-            else if (encrypted.mode === 'absolute') {
-                const keyLength = encrypted.ciphertext.length;
-                const key = new Uint8Array(keyLength);
-                
-                const enc = new TextEncoder();
-                const passwordHash = await crypto.subtle.digest('SHA-512', enc.encode(password));
-                const passwordBytes = new Uint8Array(passwordHash);
-                
-                let entropyIndex = 0;
-                const entropySources = [
-                    ...encrypted.snapshot.aqua.fishMotion,
-                    ...Object.values(encrypted.snapshot.veh).filter(v => typeof v === 'number').map(v => Math.floor(v * 1000) % 256),
-                    ...Object.values(encrypted.snapshot.market).filter(v => typeof v === 'number').map(v => Math.floor(v * 100) % 256),
-                    ...Object.values(encrypted.snapshot.weather).filter(v => typeof v === 'number').map(v => Math.floor(v * 100) % 256),
-                    ...passwordBytes
-                ];
-                
-                if (biometricKey) {
-                    entropySources.push(...biometricKey);
-                }
-                
-                for (let i = 0; i < keyLength; i++) {
-                    if (entropyIndex < entropySources.length) {
-                        key[i] = entropySources[entropyIndex] % 256;
-                        entropyIndex++;
-                    } else {
-                        const rng = new SeededRandom(encrypted.timestamp * 1000 + i + passwordBytes[0]);
-                        key[i] = Math.floor(rng.next() * 256);
-                    }
-                }
-                
-                const decrypted = new Uint8Array(keyLength);
-                for (let i = 0; i < keyLength; i++) {
-                    decrypted[i] = encrypted.ciphertext[i] ^ key[i];
-                }
-
-                // Проверяем HMAC
-                const hmacKey = await crypto.subtle.importKey(
-                    'raw', passwordBytes.slice(0, 32), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-                );
-                const hmacPayload = new Uint8Array([...encrypted.ciphertext, ...key.slice(0, 32)]);
-                const expectedHmac = new Uint8Array(await crypto.subtle.sign('HMAC', hmacKey, hmacPayload));
-                
-                let hmacValid = true;
-                if (expectedHmac.length !== encrypted.hmac.length) hmacValid = false;
-                else {
-                    let diff = 0;
-                    for (let i = 0; i < expectedHmac.length; i++) {
-                        diff |= expectedHmac[i] ^ encrypted.hmac[i];
-                    }
-                    hmacValid = diff === 0;
-                }
-                
-                if (!hmacValid) {
-                    throw new Error('HMAC verification failed — data tampered');
-                }
-                
-                return { data: decrypted, mode: 'absolute', bits: keyLength * 8 };
-            }
-        }
-    }
-
-    // ================================================================
-    //              ИНИЦИАЛИЗАЦИЯ
-    // ================================================================
-
-    const aquarium = new AquariumEntropy();
-    const vehicle = new VehicleEntropy();
-    const market = new RealMOEXAPI();
-    const weather = new WeatherAPI();
-    const gateway = new EntropyGateway(aquarium, vehicle, market, weather);
-    const nexusCrypto = new NexusCrypto(gateway);
-
-    // ================================================================
-    //              UI ФУНКЦИИ
-    // ================================================================
-
-    // ---------- ВКЛАДКИ ----------
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            document.getElementById('tab-' + this.dataset.tab).classList.add('active');
-        });
-    });
-
-    // ---------- РЕЖИМЫ ----------
-    window.setMode = function(mode) {
-        currentMode = mode;
-        
-        document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById('mode-' + mode).classList.add('active');
-        
-        const descriptions = {
-            standard: 'Стандартный режим: AES-256 с физической привязкой.',
-            paranoid: 'Режим параноика: 4 слоя AES-256. Невзламываемо даже теоретически.',
-            absolute: 'Абсолютная защита: One-Time Pad + HMAC. Идеальная криптография (Шеннон, 1949).'
+    // ===== ИСТОЧНИКИ ЭНТРОПИИ =====
+    function getAqua(t) {
+        const r = rng(t);
+        return {
+            temp: 24 + Math.sin(t/10000)*0.5 + (r()-0.5)*0.1,
+            ph: 7 + Math.sin(t/15000)*0.2 + (r()-0.5)*0.05,
+            fish: Array.from({length:16}, () => Math.floor(r()*256))
         };
-        document.getElementById('modeDescription').textContent = descriptions[mode];
-        
-        const bars = document.querySelectorAll('.strength-bar');
-        bars.forEach(bar => bar.className = 'strength-bar');
-        
-        if (mode === 'standard') {
-            bars[0].classList.add('active');
-            document.getElementById('entropyRate').textContent = '256';
-        } else if (mode === 'paranoid') {
-            for (let i = 0; i < 4; i++) bars[i].classList.add('warning');
-            document.getElementById('entropyRate').textContent = '1024';
-        } else {
-            for (let i = 0; i < 4; i++) bars[i].classList.add('danger');
-            document.getElementById('entropyRate').textContent = '∞';
-        }
-    };
+    }
 
-    // ---------- ОБНОВЛЕНИЕ UI ----------
+    function getVeh(t) {
+        const r = rng(t);
+        return {
+            speed: 40 + Math.sin(t/5000)*30 + r()*5,
+            rpm: 2000 + Math.sin(t/3000)*1500 + r()*100,
+            lat: 55.7558 + Math.sin(t/20000)*0.01
+        };
+    }
+
+    function getMoex(t) {
+        const r = rng(t + 7777);
+        return {
+            sber: 270 + Math.sin(t/100000)*10 + r()*5,
+            moex: 3200 + Math.cos(t/80000)*50 + r()*20,
+            usd: 92 + Math.sin(t/120000)*2 + (r()-0.5)*0.5
+        };
+    }
+
+    // ===== ХЭШ =====
+    async function sha256(data) {
+        const bytes = new TextEncoder().encode(typeof data === 'string' ? data : JSON.stringify(data));
+        const buf = await window.crypto.subtle.digest('SHA-256', bytes);
+        return new Uint8Array(buf);
+    }
+
+    // ===== КЛЮЧ ИЗ ПАРОЛЯ =====
+    async function makeKey(password, salt) {
+        const enc = new TextEncoder();
+        const mat = await window.crypto.subtle.importKey(
+            'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+        );
+        const key = await window.crypto.subtle.deriveKey(
+            { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+            mat,
+            { name: 'AES-GCM', length: 256 },
+            true, ['encrypt', 'decrypt']
+        );
+        return await window.crypto.subtle.exportKey('raw', key);
+    }
+
+    // ===== ШИФРОВАНИЕ AES-GCM =====
+    async function aesEncrypt(keyBytes, data) {
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const key = await window.crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt']);
+        const ct = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
+        return { iv, ct: new Uint8Array(ct) };
+    }
+
+    async function aesDecrypt(keyBytes, iv, ct) {
+        const key = await window.crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['decrypt']);
+        const pt = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+        return new Uint8Array(pt);
+    }
+
+    // ===== РЕЖИМ: СТАНДАРТ (256 бит) =====
+    async function encStd(data, pwd, snap) {
+        const fp = await sha256(snap);
+        const key = await makeKey(pwd, fp);
+        const { iv, ct } = await aesEncrypt(key, data);
+        return { mode: 'std', iv, ct, snap, bits: 256 };
+    }
+
+    async function decStd(enc, pwd) {
+        const fp = await sha256(enc.snap);
+        const key = await makeKey(pwd, fp);
+        return await aesDecrypt(key, enc.iv, enc.ct);
+    }
+
+    // ===== РЕЖИМ: ПАРАНОИК (1024 бит = 4 слоя) =====
+    async function encPar(data, pwd, snap) {
+        let cur = data;
+        const layers = [];
+        for (let i = 0; i < 4; i++) {
+            const layerSnap = { ...snap, layer: i };
+            const fp = await sha256(layerSnap);
+            const key = await makeKey(pwd + '_L' + i, fp);
+            const { iv, ct } = await aesEncrypt(key, cur);
+            cur = ct;
+            layers.push({ iv, snap: layerSnap });
+        }
+        return { mode: 'par', ct: cur, layers, bits: 1024 };
+    }
+
+    async function decPar(enc, pwd) {
+        let cur = enc.ct;
+        for (let i = 3; i >= 0; i--) {
+            const layer = enc.layers[i];
+            const fp = await sha256(layer.snap);
+            const key = await makeKey(pwd + '_L' + i, fp);
+            cur = await aesDecrypt(key, layer.iv, cur);
+        }
+        return cur;
+    }
+
+    // ===== РЕЖИМ: OTP (One-Time Pad) =====
+    async function encOTP(data, pwd, snap) {
+        // Генерируем ключ той же длины, что и данные
+        const key = new Uint8Array(data.length);
+        const seedData = JSON.stringify(snap) + pwd;
+        const seedHash = await sha256(seedData);
+        
+        // Заполняем ключ псевдослучайными байтами на основе seed
+        for (let i = 0; i < data.length; i++) {
+            const blockHash = await sha256(Array.from(seedHash).concat([i]));
+            key[i] = blockHash[0];
+        }
+
+        // XOR
+        const ct = new Uint8Array(data.length);
+        for (let i = 0; i < data.length; i++) {
+            ct[i] = data[i] ^ key[i];
+        }
+
+        return { mode: 'otp', ct, snap, bits: data.length * 8 };
+    }
+
+    async function decOTP(enc, pwd) {
+        const seedData = JSON.stringify(enc.snap) + pwd;
+        const seedHash = await sha256(seedData);
+        
+        const key = new Uint8Array(enc.ct.length);
+        for (let i = 0; i < enc.ct.length; i++) {
+            const blockHash = await sha256(Array.from(seedHash).concat([i]));
+            key[i] = blockHash[0];
+        }
+
+        const pt = new Uint8Array(enc.ct.length);
+        for (let i = 0; i < enc.ct.length; i++) {
+            pt[i] = enc.ct[i] ^ key[i];
+        }
+        return pt;
+    }
+
+    // ===== UI =====
+    function setMode(m, el) {
+        mode = m;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+    }
+
     async function updateUI() {
-        document.getElementById('aqua').textContent = JSON.stringify(aquarium.read(), null, 2);
-        document.getElementById('vehicle').textContent = JSON.stringify(vehicle.read(), null, 2);
-        document.getElementById('global').textContent = JSON.stringify(await market.read(), null, 2);
+        const t = Date.now();
+        document.getElementById('aqua').textContent = JSON.stringify(getAqua(t), null, 2);
+        document.getElementById('veh').textContent = JSON.stringify(getVeh(t), null, 2);
+        document.getElementById('moex').textContent = JSON.stringify(getMoex(t), null, 2);
 
-        const t = Math.floor(Date.now() / 1000);
-        const result = await gateway.getPhysicalFingerprint(t);
-        const fpHex = Array.from(result.fingerprint).map(b => b.toString(16).padStart(2, '0')).join('');
-        document.getElementById('fingerprint').textContent = fpHex;
-
-        document.getElementById('keyChanges').textContent = keyChanges;
-        document.getElementById('uptime').textContent = Math.floor((Date.now() - startTime) / 1000) + 's';
-        document.getElementById('rotations').textContent = rotations;
-        document.getElementById('fpStatus').textContent = `⚡ Обновлено: ${new Date().toLocaleTimeString()}`;
+        const ts = Math.floor(t / 1000);
+        const fp = await sha256({ a: getAqua(ts), v: getVeh(ts), m: getMoex(ts), t: ts });
+        document.getElementById('fp').textContent = 
+            Array.from(fp).map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // ---------- ТЕСТЫ ----------
-    window.testEncrypt = async () => {
-        const resultEl = document.getElementById('result');
-        const encryptBtn = document.getElementById('encryptBtn');
-        resultEl.className = 'result info';
-        resultEl.textContent = '⏳ Шифрование...';
-        encryptBtn.disabled = true;
+    // ===== ДЕЙСТВИЯ =====
+    window.doEncrypt = async function() {
+        const res = document.getElementById('res');
+        res.className = 'result info';
+        res.textContent = '⏳ Шифрование...';
 
         try {
-            const password = document.getElementById('password').value;
-            const message = document.getElementById('message').value;
-            const enc = new TextEncoder();
-            const data = enc.encode(message);
-            
-            const timestamp = Math.floor(Date.now() / 1000);
-            const snapshot = {
-                aqua: aquarium.read(timestamp),
-                veh: vehicle.read(timestamp),
-                market: await market.read(),
-                weather: await weather.read()
-            };
+            const pwd = document.getElementById('pwd').value;
+            const msg = document.getElementById('msg').value;
+            const data = new TextEncoder().encode(msg);
+            const ts = Math.floor(Date.now() / 1000);
+            const snap = { a: getAqua(ts), v: getVeh(ts), m: getMoex(ts), t: ts };
 
-            let encrypted;
-            const encStartTime = Date.now();
-            
-            if (currentMode === 'standard') {
-                encrypted = await nexusCrypto.encrypt256(data, password, timestamp, snapshot);
-            } else if (currentMode === 'paranoid') {
-                encrypted = await nexusCrypto.encrypt1024(data, password, timestamp, snapshot);
-            } else {
-                encrypted = await nexusCrypto.encryptOTP(data, password, timestamp, snapshot);
-            }
-            
-            const duration = Date.now() - encStartTime;
-            lastEncrypted = encrypted;
-            keyChanges++;
+            let enc;
+            const start = Date.now();
+            if (mode === 'std') enc = await encStd(data, pwd, snap);
+            else if (mode === 'par') enc = await encPar(data, pwd, snap);
+            else enc = await encOTP(data, pwd, snap);
+            const dur = Date.now() - start;
 
-            // Отправляем в Telegram
-            if (telegramConnected) {
-                sendTelegramMessage(`🔐 Зашифровано (${encrypted.mode}, ${encrypted.bits} бит)\nВремя: ${new Date().toLocaleTimeString()}`);
-            }
-
-            resultEl.className = 'result success';
-            resultEl.innerHTML = `
-                ✅ <strong>Зашифровано успешно (${encrypted.mode === 'standard' ? '256 бит' : encrypted.mode === 'paranoid' ? '1024 бита' : 'OTP ' + encrypted.bits + ' бит'})</strong><br><br>
-                <strong>Время:</strong> ${duration}мс<br>
-                <strong>Размер:</strong> ${encrypted.ciphertext.length} байт<br>
-                <strong>Сбер:</strong> ${snapshot.market.sberPrice.toFixed(2)}₽<br>
-                <strong>USD/RUB:</strong> ${snapshot.market.usdRubRate.toFixed(2)}<br>
-                <strong>Погода в Челябинске:</strong> ${snapshot.weather.temperature.toFixed(1)}°C<br><br>
-                <em style="color: #8e8e93;">🔐 Снапшот сохранён. Нажмите "Расшифровать".</em>
-            `;
+            lastEnc = enc;
+            res.className = 'result ok';
+            res.innerHTML = `✅ Зашифровано (${enc.bits} бит)<br>Размер: ${enc.ct.length} байт<br>Время: ${dur}мс`;
         } catch (e) {
-            resultEl.className = 'result error';
-            resultEl.textContent = '❌ Ошибка: ' + e.message;
-            console.error(e);
+            res.className = 'result err';
+            res.innerHTML = '❌ ' + e.message + '<br><pre>' + e.stack + '</pre>';
         }
-        
-        encryptBtn.disabled = false;
     };
 
-    window.testDecrypt = async () => {
-        const resultEl = document.getElementById('result');
-        if (!lastEncrypted) {
-            resultEl.className = 'result error';
-            resultEl.textContent = '❌ Сначала зашифруйте данные';
-            return;
-        }
-        
-        resultEl.className = 'result info';
-        resultEl.textContent = '⏳ Расшифровка...';
+    window.doDecrypt = async function() {
+        const res = document.getElementById('res');
+        if (!lastEnc) { res.className = 'result err'; res.textContent = '❌ Сначала зашифруйте'; return; }
+        res.className = 'result info';
+        res.textContent = '⏳ Расшифровка...';
 
         try {
-            const password = document.getElementById('password').value;
-            const decStartTime = Date.now();
-            const decrypted = await nexusCrypto.decrypt(lastEncrypted, password);
-            const duration = Date.now() - decStartTime;
-            
-            const text = new TextDecoder().decode(decrypted.data);
+            const pwd = document.getElementById('pwd').value;
+            let pt;
+            const start = Date.now();
+            if (lastEnc.mode === 'std') pt = await decStd(lastEnc, pwd);
+            else if (lastEnc.mode === 'par') pt = await decPar(lastEnc, pwd);
+            else pt = await decOTP(lastEnc, pwd);
+            const dur = Date.now() - start;
 
-            resultEl.className = 'result success';
-            resultEl.innerHTML = `
-                ✅ <strong>Расшифровано успешно</strong><br><br>
-                <strong>Сообщение:</strong> ${text}<br>
-                <strong>Время:</strong> ${duration}мс<br>
-                <strong>Режим:</strong> ${lastEncrypted.mode}<br><br>
-                <em style="color: #34c759;">🔓 Микро + Макро состояние совпало → доступ разрешён</em>
-            `;
+            const text = new TextDecoder().decode(pt);
+            res.className = 'result ok';
+            res.innerHTML = `✅ Расшифровано<br>Сообщение: <b>${text}</b><br>Время: ${dur}мс`;
         } catch (e) {
-            resultEl.className = 'result error';
-            resultEl.textContent = '❌ Ошибка: ' + e.message;
-            console.error(e);
+            res.className = 'result err';
+            res.innerHTML = '❌ ' + e.message + '<br><pre>' + e.stack + '</pre>';
         }
     };
 
-    window.testTamper = async () => {
-        const resultEl = document.getElementById('result');
-        if (!lastEncrypted) {
-            resultEl.className = 'result error';
-            resultEl.textContent = '❌ Сначала зашифруйте данные';
-            return;
-        }
-        
-        resultEl.className = 'result info';
-        resultEl.textContent = '⏳ Имитация атаки...';
+    window.doTamper = async function() {
+        const res = document.getElementById('res');
+        if (!lastEnc) { res.className = 'result err'; res.textContent = '❌ Сначала зашифруйте'; return; }
+        res.className = 'result info';
+        res.textContent = '⏳ Атака...';
 
         try {
-            const password = document.getElementById('password').value;
+            const pwd = document.getElementById('pwd').value;
+            const fakeTs = Math.floor(Date.now() / 1000) + 999999;
+            const fakeSnap = { a: getAqua(fakeTs), v: getVeh(fakeTs), m: getMoex(fakeTs), t: fakeTs };
             
-            // Создаём фейковый снапшот
-            const fakeTime = Date.now() + 999999;
-            const fakeSnapshot = {
-                aqua: aquarium.read(fakeTime),
-                veh: vehicle.read(fakeTime),
-                market: await market.read(),
-                weather: await weather.read()
-            };
-            
-            const tamperedEncrypted = { ...lastEncrypted, snapshot: fakeSnapshot };
-            if (lastEncrypted.mode === 'paranoid') {
-                tamperedEncrypted.layers = lastEncrypted.layers.map(layer => ({
-                    ...layer,
-                    snapshot: fakeSnapshot
-                }));
-            }
-            
-            await nexusCrypto.decrypt(tamperedEncrypted, password);
-            
-            resultEl.className = 'result error';
-            resultEl.innerHTML = `⚠️ <strong>Расшифровалось (невозможно в реальности)</strong><br><br><em style="color: #8e8e93;">В демо используется детерминированная симуляция. С реальным железом это невозможно.</em>`;
+            const fakeEnc = { ...lastEnc };
+            if (lastEnc.mode === 'std') fakeEnc.snap = fakeSnap;
+            else if (lastEnc.mode === 'par') fakeEnc.layers = lastEnc.layers.map(l => ({ ...l, snap: { ...l.snap, t: fakeTs } }));
+            else fakeEnc.snap = fakeSnap;
+
+            let pt;
+            if (fakeEnc.mode === 'std') pt = await decStd(fakeEnc, pwd);
+            else if (fakeEnc.mode === 'par') pt = await decPar(fakeEnc, pwd);
+            else pt = await decOTP(fakeEnc, pwd);
+
+            res.className = 'result err';
+            res.textContent = '⚠️ Расшифровалось (в симуляции возможно)';
         } catch (e) {
-            resultEl.className = 'result success';
-            resultEl.innerHTML = `
-                🛡️ <strong>ЗАЩИТА СРАБОТАЛА</strong><br><br>
-                <strong>Ошибка:</strong> ${e.message}<br><br>
-                <em style="color: #34c759;">Мир изменился (другие рыбки, другой курс Сбера, другая погода) → расшифровка невозможна.</em>
-            `;
+            res.className = 'result ok';
+            res.innerHTML = `🛡️ ЗАЩИТА СРАБОТАЛА<br>${e.message}`;
         }
     };
 
-    // ================================================================
-    //              БИОМЕТРИЯ (WebAuthn)
-    // ================================================================
-
-    window.registerBiometric = async function() {
-        const resultEl = document.getElementById('bioResult');
-        resultEl.className = 'result info';
-        resultEl.textContent = '⏳ Запрос биометрии...';
-
-        try {
-            if (!window.PublicKeyCredential) {
-                throw new Error('WebAuthn не поддерживается в этом браузере. Используйте Chrome/Edge/Firefox.');
-            }
-
-            const challenge = crypto.getRandomValues(new Uint8Array(32));
-            const userId = crypto.getRandomValues(new Uint8Array(16));
-
-            const credential = await navigator.credentials.create({
-                publicKey: {
-                    challenge: challenge,
-                    rp: { name: 'NEXUS74 ULTIMATE', id: window.location.hostname || 'localhost' },
-                    user: {
-                        id: userId,
-                        name: 'nexus74_user',
-                        displayName: 'NEXUS74 User'
-                    },
-                    pubKeyCredParams: [
-                        { type: 'public-key', alg: -7 },
-                        { type: 'public-key', alg: -257 }
-                    ],
-                    authenticatorSelection: {
-                        authenticatorAttachment: 'platform',
-                        userVerification: 'required'
-                    },
-                    timeout: 60000
-                }
-            });
-
-            // Сохраняем биометрический ключ
-            const rawId = new Uint8Array(credential.rawId);
-            const response = new Uint8Array(credential.response.attestationObject);
-            biometricKey = new Uint8Array([...rawId, ...response]);
-            biometricRegistered = true;
-
-            document.getElementById('biometricDot').className = 'biometric-dot active';
-            document.getElementById('biometricText').textContent = '✅ Биометрия зарегистрирована (отпечаток/Face ID)';
-            document.getElementById('bioRegisterBtn').textContent = '✅ Зарегистрировано';
-
-            resultEl.className = 'result success';
-            resultEl.innerHTML = `✅ <strong>Биометрия успешно зарегистрирована!</strong><br><br>
-                <strong>Ключ:</strong> ${biometricKey.slice(0, 16).map(b => b.toString(16).padStart(2, '0')).join('')}...<br>
-                <strong>Длина:</strong> ${biometricKey.length} байт<br><br>
-                <em style="color: #34c759;">Теперь биометрия используется для усиления шифрования.</em>`;
-
-            // Сохраняем в localStorage
-            try {
-                localStorage.setItem('nexus74_biometric', JSON.stringify({
-                    key: Array.from(biometricKey),
-                    registered: true
-                }));
-            } catch (e) {}
-
-            // Отправляем в Telegram
-            if (telegramConnected) {
-                sendTelegramMessage('👆 Биометрия зарегистрирована для NEXUS74 ULTIMATE');
-            }
-
-        } catch (e) {
-            resultEl.className = 'result error';
-            resultEl.innerHTML = `❌ <strong>Ошибка регистрации биометрии</strong><br><br>${e.message}`;
-            console.error(e);
-        }
-    };
-
-    window.authenticateBiometric = async function() {
-        const resultEl = document.getElementById('bioResult');
-        resultEl.className = 'result info';
-        resultEl.textContent = '⏳ Аутентификация...';
-
-        try {
-            if (!biometricRegistered) {
-                throw new Error('Сначала зарегистрируйте биометрию');
-            }
-
-            const challenge = crypto.getRandomValues(new Uint8Array(32));
-            
-            const credential = await navigator.credentials.get({
-                publicKey: {
-                    challenge: challenge,
-                    rpId: window.location.hostname || 'localhost',
-                    userVerification: 'required',
-                    timeout: 60000
-                }
-            });
-
-            resultEl.className = 'result success';
-            resultEl.innerHTML = `✅ <strong>Биометрическая аутентификация пройдена!</strong><br><br>
-                <em style="color: #34c759;">🔐 Ваша биометрия подтверждена. Ключ используется для шифрования.</em>`;
-
-        } catch (e) {
-            resultEl.className = 'result error';
-            resultEl.innerHTML = `❌ <strong>Ошибка аутентификации</strong><br><br>${e.message}`;
-            console.error(e);
-        }
-    };
-
-    window.clearBiometric = function() {
-        biometricKey = null;
-        biometricRegistered = false;
-        document.getElementById('biometricDot').className = 'biometric-dot';
-        document.getElementById('biometricText').textContent = 'Биометрия не активирована';
-        document.getElementById('bioRegisterBtn').textContent = '📝 Зарегистрировать';
-        document.getElementById('bioResult').className = 'result info';
-        document.getElementById('bioResult').textContent = 'Биометрия очищена';
-        localStorage.removeItem('nexus74_biometric');
-    };
-
-    // ================================================================
-    //              TELEGRAM БОТ
-    // ================================================================
-
-    window.connectTelegram = function() {
-        const token = document.getElementById('telegramToken').value;
-        const chatId = document.getElementById('telegramChatId').value;
-
-        if (!token || !chatId) {
-            document.getElementById('telegramResult').className = 'result error';
-            document.getElementById('telegramResult').textContent = '❌ Введите Bot Token и Chat ID';
-            return;
-        }
-
-        telegramToken = token;
-        telegramChatId = chatId;
-        telegramConnected = true;
-
-        document.getElementById('telegramDot').style.background = '#34c759';
-        document.getElementById('telegramText').textContent = '✅ Бот подключён';
-        document.getElementById('telegramConnectBtn').textContent = '✅ Подключено';
-
-        document.getElementById('telegramResult').className = 'result success';
-        document.getElementById('telegramResult').textContent = '✅ Telegram-бот успешно подключён!';
-
-        // Проверяем подключение
-        sendTelegramMessage('🚀 NEXUS74 ULTIMATE подключён к Telegram!');
-    };
-
-    window.sendTelegramMessage = async function(message) {
-        if (!telegramConnected) {
-            console.warn('Telegram не подключён');
-            return;
-        }
-
-        try {
-            const url = `https://api.telegram.org/bot${telegramToken}/sendMessage`;
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    chat_id: telegramChatId,
-                    text: message,
-                    parse_mode: 'HTML'
-                })
-            });
-            const data = await response.json();
-            if (!data.ok) {
-                console.error('Telegram error:', data);
-            }
-        } catch (e) {
-            console.error('Telegram send error:', e);
-        }
-    };
-
-    window.sendEncryptedTelegram = async function() {
-        const messageText = document.getElementById('telegramMessage').value;
-        const password = document.getElementById('password').value;
-        
-        if (!telegramConnected) {
-            document.getElementById('telegramResult').className = 'result error';
-            document.getElementById('telegramResult').textContent = '❌ Сначала подключите Telegram-бота';
-            return;
-        }
-
-        try {
-            const enc = new TextEncoder();
-            const data = enc.encode(messageText);
-            const timestamp = Math.floor(Date.now() / 1000);
-            const snapshot = {
-                aqua: aquarium.read(timestamp),
-                veh: vehicle.read(timestamp),
-                market: await market.read(),
-                weather: await weather.read()
-            };
-
-            const encrypted = await nexusCrypto.encrypt256(data, password, timestamp, snapshot);
-            
-            // Отправляем зашифрованное сообщение
-            const cipherHex = encrypted.ciphertext.slice(0, 32).map(b => 
-                b.toString(16).padStart(2, '0')
-            ).join('');
-
-            await sendTelegramMessage(
-                `🔐 <b>Зашифрованное сообщение</b>\n\n` +
-                `Режим: ${encrypted.mode}\n` +
-                `Битность: ${encrypted.bits}\n` +
-                `Размер: ${encrypted.ciphertext.length} байт\n` +
-                `Время: ${new Date().toLocaleTimeString()}\n\n` +
-                `<code>${cipherHex}...</code>\n\n` +
-                `📌 Для расшифровки используйте NEXUS74 с правильным физическим состоянием.`
-            );
-
-            document.getElementById('telegramResult').className = 'result success';
-            document.getElementById('telegramResult').innerHTML = `
-                ✅ <strong>Зашифрованное сообщение отправлено в Telegram!</strong><br><br>
-                <strong>Размер:</strong> ${encrypted.ciphertext.length} байт<br>
-                <strong>Режим:</strong> ${encrypted.mode}<br>
-                <strong>Префикс:</strong> ${cipherHex.slice(0, 32)}...
-            `;
-
-        } catch (e) {
-            document.getElementById('telegramResult').className = 'result error';
-            document.getElementById('telegramResult').textContent = '❌ Ошибка: ' + e.message;
-        }
-    };
-
-    // ================================================================
-    //              ЭКСПОРТ / ИМПОРТ КЛЮЧЕЙ
-    // ================================================================
-
-    window.exportKeys = function() {
-        const data = {
-            version: 'NEXUS74_ULTIMATE_v1',
-            timestamp: Date.now(),
-            keyChanges: keyChanges,
-            rotations: rotations,
-            biometric: biometricKey ? Array.from(biometricKey) : null,
-            lastEncrypted: lastEncrypted || null,
-            settings: {
-                mode: currentMode,
-                iterations: document.getElementById('pbkdf2Iterations').value,
-                rotation: document.getElementById('rotationInterval').value,
-                sources: {
-                    aqua: document.getElementById('srcAqua').checked,
-                    vehicle: document.getElementById('srcVehicle').checked,
-                    market: document.getElementById('srcMarket').checked,
-                    biometric: document.getElementById('srcBiometric').checked
-                }
-            },
-            telegram: {
-                connected: telegramConnected,
-                token: telegramToken ? '***' : null,
-                chatId: telegramChatId ? '***' : null
-            }
-        };
-
-        const json = JSON.stringify(data, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `nexus74_keys_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        document.getElementById('exportResult').className = 'result success';
-        document.getElementById('exportResult').innerHTML = `
-            ✅ <strong>Ключи экспортированы!</strong><br><br>
-            <strong>Файл:</strong> nexus74_keys_${new Date().toISOString().slice(0,10)}.json<br>
-            <strong>Смен ключа:</strong> ${keyChanges}<br>
-            <strong>Ротаций:</strong> ${rotations}<br>
-            <em style="color: #ff9500;">⚠️ Храните файл в надёжном месте!</em>
-        `;
-
-        // Отправляем в Telegram
-        if (telegramConnected) {
-            sendTelegramMessage(`💾 <b>Экспорт ключей</b>\nСмен ключа: ${keyChanges}\nРотаций: ${rotations}\nВремя: ${new Date().toLocaleTimeString()}`);
-        }
-    };
-
-    window.importKeys = function(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = JSON.parse(e.target.result);
-                
-                if (data.version !== 'NEXUS74_ULTIMATE_v1') {
-                    throw new Error('Неверная версия файла');
-                }
-
-                // Восстанавливаем биометрию
-                if (data.biometric) {
-                    biometricKey = new Uint8Array(data.biometric);
-                    biometricRegistered = true;
-                    document.getElementById('biometricDot').className = 'biometric-dot active';
-                    document.getElementById('biometricText').textContent = '✅ Биометрия восстановлена из бэкапа';
-                    document.getElementById('bioRegisterBtn').textContent = '✅ Зарегистрировано';
-                }
-
-                // Восстанавливаем настройки
-                if (data.settings) {
-                    document.getElementById('pbkdf2Iterations').value = data.settings.iterations || '200000';
-                    document.getElementById('rotationInterval').value = data.settings.rotation || '0';
-                    document.getElementById('srcAqua').checked = data.settings.sources?.aqua !== false;
-                    document.getElementById('srcVehicle').checked = data.settings.sources?.vehicle !== false;
-                    document.getElementById('srcMarket').checked = data.settings.sources?.market !== false;
-                    document.getElementById('srcBiometric').checked = data.settings.sources?.biometric !== false;
-                    
-                    if (data.settings.mode) {
-                        setMode(data.settings.mode);
-                    }
-                }
-
-                keyChanges = data.keyChanges || 0;
-                rotations = data.rotations || 0;
-
-                document.getElementById('exportResult').className = 'result success';
-                document.getElementById('exportResult').innerHTML = `
-                    ✅ <strong>Ключи импортированы успешно!</strong><br><br>
-                    <strong>Версия:</strong> ${data.version}<br>
-                    <strong>Дата:</strong> ${new Date(data.timestamp).toLocaleString()}<br>
-                    <strong>Смен ключа:</strong> ${keyChanges}<br>
-                    <strong>Ротаций:</strong> ${rotations}<br>
-                    <strong>Биометрия:</strong> ${data.biometric ? '✅ Восстановлена' : '❌ Отсутствует'}<br>
-                    <em style="color: #34c759;">✅ Все ключи и настройки восстановлены!</em>
-                `;
-
-                // Отправляем в Telegram
-                if (telegramConnected) {
-                    sendTelegramMessage(`📥 <b>Импорт ключей</b>\nСмен ключа: ${keyChanges}\nРотаций: ${rotations}\nВремя: ${new Date().toLocaleTimeString()}`);
-                }
-
-            } catch (err) {
-                document.getElementById('exportResult').className = 'result error';
-                document.getElementById('exportResult').textContent = '❌ Ошибка импорта: ' + err.message;
-            }
-        };
-        reader.readAsText(file);
-        event.target.value = '';
-    };
-
-    // ================================================================
-    //              НАСТРОЙКИ И РОТАЦИЯ
-    // ================================================================
-
-    window.updateRotationSettings = function() {
-        const interval = parseInt(document.getElementById('rotationInterval').value);
-        const iterations = document.getElementById('pbkdf2Iterations').value;
-        
-        nexusCrypto.iterations = parseInt(iterations);
-
-        if (rotationTimer) {
-            clearTimeout(rotationTimer);
-            rotationTimer = null;
-        }
-
-        const info = document.getElementById('rotationInfo');
-        if (interval === 0) {
-            info.innerHTML = `
-                <span><strong>Ротация:</strong> Отключена</span>
-                <span><strong>Итерации:</strong> ${parseInt(iterations).toLocaleString()}</span>
-                <span><strong>Следующая ротация:</strong> —</span>
-            `;
-            return;
-        }
-
-        const nextRotation = Date.now() + interval * 1000;
-        info.innerHTML = `
-            <span><strong>Ротация:</strong> Каждые ${interval} сек</span>
-            <span><strong>Итерации:</strong> ${parseInt(iterations).toLocaleString()}</span>
-            <span><strong>Следующая ротация:</strong> ${new Date(nextRotation).toLocaleTimeString()}</span>
-        `;
-
-        // Запускаем ротацию
-        rotationTimer = setTimeout(async () => {
-            await manualRotate();
-        }, interval * 1000);
-
-        document.getElementById('settingsResult').className = 'result info';
-        document.getElementById('settingsResult').textContent = `✅ Настройки применены. Ротация каждые ${interval} сек.`;
-    };
-
-    window.manualRotate = async function() {
-        const resultEl = document.getElementById('settingsResult');
-        resultEl.className = 'result info';
-        resultEl.textContent = '⏳ Ротация ключей...';
-
-        try {
-            // Генерируем новый ключ
-            const timestamp = Math.floor(Date.now() / 1000);
-            const snapshot = {
-                aqua: aquarium.read(timestamp),
-                veh: vehicle.read(timestamp),
-                market: await market.read(),
-                weather: await weather.read()
-            };
-
-            const result = await gateway.getPhysicalFingerprint(timestamp, snapshot);
-            const fpHex = Array.from(result.fingerprint).map(b => 
-                b.toString(16).padStart(2, '0')
-            ).join('');
-
-            rotations++;
-            keyChanges++;
-
-            resultEl.className = 'result success';
-            resultEl.innerHTML = `
-                🔄 <strong>Ротация выполнена!</strong><br><br>
-                <strong>Новый отпечаток:</strong> ${fpHex.slice(0, 32)}...<br>
-                <strong>Всего ротаций:</strong> ${rotations}<br>
-                <strong>Смен ключа:</strong> ${keyChanges}<br><br>
-                <em style="color: #34c759;">✅ Ключи обновлены. Старые ключи больше не действуют.</em>
-            `;
-
-            // Отправляем в Telegram
-            if (telegramConnected) {
-                sendTelegramMessage(`🔄 <b>Ротация ключей #${rotations}</b>\nСмен ключа: ${keyChanges}\nВремя: ${new Date().toLocaleTimeString()}`);
-            }
-
-            // Перезапускаем таймер
-            updateRotationSettings();
-
-        } catch (e) {
-            resultEl.className = 'result error';
-            resultEl.textContent = '❌ Ошибка ротации: ' + e.message;
-        }
-    };
-
-    window.resetAll = function() {
-        if (!confirm('⚠️ Вы уверены? Все ключи будут сброшены. Это действие необратимо.')) return;
-
-        keyChanges = 0;
-        rotations = 0;
-        startTime = Date.now();
-        lastEncrypted = null;
-        biometricKey = null;
-        biometricRegistered = false;
-        
-        document.getElementById('biometricDot').className = 'biometric-dot';
-        document.getElementById('biometricText').textContent = 'Биометрия не активирована';
-        document.getElementById('bioRegisterBtn').textContent = '📝 Зарегистрировать';
-        
-        if (rotationTimer) {
-            clearTimeout(rotationTimer);
-            rotationTimer = null;
-        }
-
-        document.getElementById('settingsResult').className = 'result success';
-        document.getElementById('settingsResult').textContent = '✅ Все ключи сброшены. Начните заново.';
-
-        // Отправляем в Telegram
-        if (telegramConnected) {
-            sendTelegramMessage('⚠️ <b>ВСЕ КЛЮЧИ СБРОШЕНЫ</b>\nВремя: ' + new Date().toLocaleTimeString());
-        }
-
-        updateUI();
-    };
-
-    // ================================================================
-    //              ЗАПУСК
-    // ================================================================
-
-    // Восстановление биометрии из localStorage
-    try {
-        const saved = localStorage.getItem('nexus74_biometric');
-        if (saved) {
-            const data = JSON.parse(saved);
-            if (data.registered && data.key) {
-                biometricKey = new Uint8Array(data.key);
-                biometricRegistered = true;
-                document.getElementById('biometricDot').className = 'biometric-dot active';
-                document.getElementById('biometricText').textContent = '✅ Биометрия восстановлена';
-                document.getElementById('bioRegisterBtn').textContent = '✅ Зарегистрировано';
-            }
-        }
-    } catch (e) {}
-
-    // Запускаем UI
     setInterval(updateUI, 1000);
     updateUI();
-    setMode('standard');
-    updateRotationSettings();
-
-    console.log('🚀 NEXUS74 ULTIMATE загружен!');
-    console.log('📊 Режим: Стандарт (256 бит)');
-    console.log('👆 Биометрия:', biometricRegistered ? 'Активна' : 'Не активирована');
-    console.log('📱 Telegram:', telegramConnected ? 'Подключён' : 'Не подключён');
     </script>
 </body>
 </html>
+
