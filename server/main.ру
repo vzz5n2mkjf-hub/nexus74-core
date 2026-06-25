@@ -1,0 +1,59 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+import psycopg2
+import uuid
+
+app = FastAPI(title="NEXUS74 API")
+
+DB_CONFIG = {
+    "dbname": "nexus74",
+    "user": "nexus74",
+    "password": "nexus74_secret",
+    "host": "localhost"
+}
+
+def get_db():
+    return psycopg2.connect(**DB_CONFIG)
+
+conn = get_db()
+conn.execute("""
+    CREATE TABLE IF NOT EXISTS files (
+        id TEXT PRIMARY KEY,
+        ciphertext TEXT NOT NULL,
+        snapshot TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+    )
+""")
+conn.commit()
+conn.close()
+
+class StoreRequest(BaseModel):
+    ciphertext: str
+    snapshot: str
+
+@app.get("/api/v1/health")
+def health():
+    return {"status": "ok"}
+
+@app.post("/api/v1/store")
+def store(req: StoreRequest):
+    file_id = str(uuid.uuid4())[:8]
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO files (id, ciphertext, snapshot) VALUES (%s, %s, %s)",
+        (file_id, req.ciphertext, req.snapshot)
+    )
+    conn.commit()
+    conn.close()
+    return {"id": file_id}
+
+@app.get("/api/v1/retrieve/{file_id}")
+def retrieve(file_id: str):
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("SELECT ciphertext, snapshot FROM files WHERE id = %s", (file_id,))
+    row = cur.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Not found")
+    return {"ciphertext": row[0], "snapshot": row[1]}
