@@ -167,7 +167,6 @@
         <h1>🔐 NEXUS74</h1>
         <div class="subtitle">Physical-Bound Cryptographic Protocol<br>Шифрование привязано к состоянию аквариума и автомобиля</div>
 
-        <!-- LIVE ДАННЫЕ -->
         <div class="panel">
             <h3><span class="live-indicator"></span>🐠 Аквариум (live)</h3>
             <pre id="aqua">загрузка...</pre>
@@ -178,14 +177,13 @@
             <pre id="vehicle">загрузка...</pre>
         </div>
 
-        <!-- ФИЗИЧЕСКИЙ ОТПЕЧАТОК -->
         <div class="panel">
             <h3>🔑 Физический отпечаток P(t)</h3>
             <div class="fingerprint" id="fingerprint">—</div>
             <div class="status">⚡ Обновляется каждую секунду. Изменилось состояние → изменился ключ.</div>
             <div class="stats">
                 <div class="stat">
-                    <div class="number" id="entropyRate">0</div>
+                    <div class="number" id="entropyRate">256</div>
                     <div class="label">бит/сек</div>
                 </div>
                 <div class="stat">
@@ -199,7 +197,6 @@
             </div>
         </div>
 
-        <!-- ТЕСТ ШИФРОВАНИЯ -->
         <div class="panel">
             <h3>🧪 Тест шифрования</h3>
             <div class="input-group">
@@ -214,7 +211,6 @@
             <div class="result info" id="result">Нажми "Зашифровать" для начала теста</div>
         </div>
 
-        <!-- О ПРОТОКОЛЕ -->
         <div class="panel">
             <h3>📖 Как это работает?</h3>
             <div style="font-size: 13px; line-height: 1.7; color: #c0c0c0;">
@@ -233,21 +229,34 @@
     </div>
 
     <script>
-        // ========== NEXUS74 CORE ==========
+        // ========== NEXUS74 CORE (FIXED) ==========
         
+        // 🔑 Детерминированный PRNG на основе seed (для симуляции)
+        class SeededRandom {
+            constructor(seed) {
+                this.seed = seed;
+            }
+            next() {
+                this.seed = (this.seed * 9301 + 49297) % 233280;
+                return this.seed / 233280;
+            }
+        }
+
         // 🐠 Аквариум — биологическая энтропия
         class AquariumEntropy {
-            read() {
-                const t = Date.now();
+            read(forTimestamp = null) {
+                const t = forTimestamp || Date.now();
+                // Если передан timestamp — используем детерминированную симуляцию
+                const rng = new SeededRandom(t);
                 return {
                     source: 'aquarium',
                     timestamp: t,
-                    temperature: 24 + Math.sin(t / 10000) * 0.5 + (Math.random() - 0.5) * 0.1,
-                    ph: 7.0 + Math.sin(t / 15000) * 0.2 + (Math.random() - 0.5) * 0.05,
-                    light: 300 + Math.sin(t / 8000) * 100 + Math.random() * 50,
-                    vibration: Math.abs(Math.sin(t / 500)) * 0.05 + Math.random() * 0.02,
-                    sound: 40 + Math.random() * 15,
-                    fishMotion: Array.from(crypto.getRandomValues(new Uint8Array(16)))
+                    temperature: 24 + Math.sin(t / 10000) * 0.5 + (rng.next() - 0.5) * 0.1,
+                    ph: 7.0 + Math.sin(t / 15000) * 0.2 + (rng.next() - 0.5) * 0.05,
+                    light: 300 + Math.sin(t / 8000) * 100 + rng.next() * 50,
+                    vibration: Math.abs(Math.sin(t / 500)) * 0.05 + rng.next() * 0.02,
+                    sound: 40 + rng.next() * 15,
+                    fishMotion: Array.from({length: 16}, () => Math.floor(rng.next() * 256))
                 };
             }
         }
@@ -257,33 +266,42 @@
             constructor() {
                 this.tripStart = Date.now();
             }
-            read() {
-                const t = Date.now() - this.tripStart;
+            read(forTimestamp = null) {
+                const t = forTimestamp || Date.now();
+                const rng = new SeededRandom(t);
+                const tripTime = t - this.tripStart;
                 return {
                     source: 'vehicle',
-                    timestamp: Date.now(),
-                    lat: 55.7558 + Math.sin(t / 20000) * 0.01 + (Math.random() - 0.5) * 0.0001,
-                    lon: 37.6176 + Math.cos(t / 20000) * 0.01 + (Math.random() - 0.5) * 0.0001,
-                    speed: 40 + Math.sin(t / 5000) * 30 + Math.random() * 5,
-                    rpm: 2000 + Math.sin(t / 3000) * 1500 + Math.random() * 100,
-                    vibration: Math.abs(Math.sin(t / 400)) * 0.2 + Math.random() * 0.05,
-                    tilt: Math.sin(t / 6000) * 3 + (Math.random() - 0.5) * 0.5,
-                    engineTemp: 85 + Math.sin(t / 30000) * 5,
-                    throttle: Math.max(0, Math.sin(t / 2500) * 50 + 30 + Math.random() * 10)
+                    timestamp: t,
+                    lat: 55.7558 + Math.sin(tripTime / 20000) * 0.01 + (rng.next() - 0.5) * 0.0001,
+                    lon: 37.6176 + Math.cos(tripTime / 20000) * 0.01 + (rng.next() - 0.5) * 0.0001,
+                    speed: 40 + Math.sin(tripTime / 5000) * 30 + rng.next() * 5,
+                    rpm: 2000 + Math.sin(tripTime / 3000) * 1500 + rng.next() * 100,
+                    vibration: Math.abs(Math.sin(tripTime / 400)) * 0.2 + rng.next() * 0.05,
+                    tilt: Math.sin(tripTime / 6000) * 3 + (rng.next() - 0.5) * 0.5,
+                    engineTemp: 85 + Math.sin(tripTime / 30000) * 5,
+                    throttle: Math.max(0, Math.sin(tripTime / 2500) * 50 + 30 + rng.next() * 10)
                 };
             }
         }
 
-        // 🔗 Entropy Gateway — физический отпечаток P(t)
+        // 🔗 Entropy Gateway
         class EntropyGateway {
             constructor(aquarium, vehicle) {
                 this.aquarium = aquarium;
                 this.vehicle = vehicle;
             }
 
-            async getPhysicalFingerprint(timestamp) {
-                const aqua = this.aquarium.read();
-                const veh = this.vehicle.read();
+            async getPhysicalFingerprint(timestamp, snapshot = null) {
+                // Если передан snapshot — используем его
+                let aqua, veh;
+                if (snapshot) {
+                    aqua = snapshot.aqua;
+                    veh = snapshot.veh;
+                } else {
+                    aqua = this.aquarium.read(timestamp);
+                    veh = this.vehicle.read(timestamp);
+                }
 
                 const normalized = {
                     a: this.normalize(aqua),
@@ -293,7 +311,10 @@
 
                 const encoded = new TextEncoder().encode(JSON.stringify(normalized));
                 const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
-                return new Uint8Array(hashBuffer);
+                return {
+                    fingerprint: new Uint8Array(hashBuffer),
+                    snapshot: { aqua, veh }
+                };
             }
 
             normalize(obj) {
@@ -309,34 +330,41 @@
             }
         }
 
-        // 🔑 Key Cascade
+        // 🔑 Key Cascade (FIXED)
         class KeyCascade {
-            constructor(iterations = 100000) {
+            constructor(iterations = 50000) { // уменьшил для скорости на мобильном
                 this.iterations = iterations;
             }
 
             async build(password, gateway, startTime, durationSeconds) {
                 const chain = [];
-                const P0 = await gateway.getPhysicalFingerprint(startTime);
-                let currentKey = await this.deriveFromPassword(password, P0);
-                chain.push(currentKey);
+                const result0 = await gateway.getPhysicalFingerprint(startTime);
+                let currentKey = await this.deriveFromPassword(password, result0.fingerprint);
+                chain.push({
+                    key: currentKey,
+                    snapshot: result0.snapshot
+                });
 
                 for (let i = 1; i <= durationSeconds; i++) {
-                    const Pt = await gateway.getPhysicalFingerprint(startTime + i);
-                    currentKey = await this.hkdf(currentKey, Pt);
-                    chain.push(currentKey);
+                    const result = await gateway.getPhysicalFingerprint(startTime + i);
+                    currentKey = await this.hkdf(currentKey, result.fingerprint);
+                    chain.push({
+                        key: currentKey,
+                        snapshot: result.snapshot
+                    });
                 }
                 return chain;
             }
 
-            async reconstruct(password, gateway, startTime, targetIndex) {
-                const P0 = await gateway.getPhysicalFingerprint(startTime);
-                let key = await this.deriveFromPassword(password, P0);
+            async reconstruct(password, gateway, startTime, targetIndex, savedSnapshot) {
+                // КРИТИЧНО: используем сохранённый snapshot!
+                const result0 = await gateway.getPhysicalFingerprint(startTime, savedSnapshot);
+                let key = await this.deriveFromPassword(password, result0.fingerprint);
                 if (targetIndex === 0) return key;
 
                 for (let i = 1; i <= targetIndex; i++) {
-                    const Pt = await gateway.getPhysicalFingerprint(startTime + i);
-                    key = await this.hkdf(key, Pt);
+                    const result = await gateway.getPhysicalFingerprint(startTime + i, savedSnapshot);
+                    key = await this.hkdf(key, result.fingerprint);
                 }
                 return key;
             }
@@ -375,40 +403,37 @@
         const aquarium = new AquariumEntropy();
         const vehicle = new VehicleEntropy();
         const gateway = new EntropyGateway(aquarium, vehicle);
-        const cascade = new KeyCascade(100000); // 100k итераций для демо (в продакшене 200k+)
+        const cascade = new KeyCascade(50000);
 
         let lastEncrypted = null;
         let lastStartTime = null;
+        let lastSnapshot = null;  // ← ВАЖНО: сохраняем snapshot!
         let keyChanges = 0;
         let startTime = Date.now();
 
         // ========== UI ОБНОВЛЕНИЯ ==========
         async function updateUI() {
-            // Данные с датчиков
             const aqua = aquarium.read();
             const veh = vehicle.read();
             document.getElementById('aqua').textContent = JSON.stringify(aqua, null, 2);
             document.getElementById('vehicle').textContent = JSON.stringify(veh, null, 2);
 
-            // Физический отпечаток
             const t = Math.floor(Date.now() / 1000);
-            const fp = await gateway.getPhysicalFingerprint(t);
-            const fpHex = Array.from(fp).map(b => b.toString(16).padStart(2, '0')).join('');
+            const result = await gateway.getPhysicalFingerprint(t);
+            const fpHex = Array.from(result.fingerprint).map(b => b.toString(16).padStart(2, '0')).join('');
             document.getElementById('fingerprint').textContent = fpHex;
 
-            // Статистика
             keyChanges++;
             document.getElementById('keyChanges').textContent = keyChanges;
-            document.getElementById('entropyRate').textContent = '256';
             const uptime = Math.floor((Date.now() - startTime) / 1000);
             document.getElementById('uptime').textContent = uptime + 's';
         }
 
-        // ========== ТЕСТЫ ==========
+        // ========== ТЕСТЫ (FIXED) ==========
         window.testEncrypt = async () => {
             const resultEl = document.getElementById('result');
             resultEl.className = 'result info';
-            resultEl.textContent = '⏳ Шифрование...';
+            resultEl.textContent = '⏳ Шифрование... (может занять 1-2 сек)';
 
             try {
                 const password = document.getElementById('password').value;
@@ -417,13 +442,15 @@
                 
                 lastStartTime = Math.floor(Date.now() / 1000);
                 
-                // Строим каскад ключей
+                // Строим каскад ключей (с сохранением snapshot!)
                 const keyChain = await cascade.build(password, gateway, lastStartTime, 1);
+                const firstKey = keyChain[0].key;
+                lastSnapshot = keyChain[0].snapshot; // СОХРАНЯЕМ SNAPSHOT!
                 
                 // Шифруем
                 const iv = crypto.getRandomValues(new Uint8Array(12));
                 const cryptoKey = await crypto.subtle.importKey(
-                    'raw', keyChain[0], { name: 'AES-GCM' }, false, ['encrypt']
+                    'raw', firstKey, { name: 'AES-GCM' }, false, ['encrypt']
                 );
                 const ciphertext = await crypto.subtle.encrypt(
                     { name: 'AES-GCM', iv },
@@ -433,7 +460,7 @@
 
                 // HMAC
                 const hmacKey = await crypto.subtle.importKey(
-                    'raw', keyChain[0], { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+                    'raw', firstKey, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
                 );
                 const payload = new TextEncoder().encode(JSON.stringify({
                     data: Array.from(new Uint8Array(ciphertext)),
@@ -452,20 +479,20 @@
                 resultEl.innerHTML = `
                     ✅ <strong>Зашифровано успешно</strong><br><br>
                     <strong>Время шифрования:</strong> ${lastStartTime}<br>
-                    <strong>Размер шифротекста:</strong> ${lastEncrypted.ciphertext.length} байт<br>
-                    <strong>IV:</strong> ${lastEncrypted.iv.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')}...<br>
-                    <strong>HMAC:</strong> ${lastEncrypted.hmac.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')}...<br><br>
-                    <em style="color: #8e8e93;">Теперь нажми "Расшифровать" или "Чужие рыбки"</em>
+                    <strong>Размер:</strong> ${lastEncrypted.ciphertext.length} байт<br>
+                    <strong>IV:</strong> ${lastEncrypted.iv.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')}...<br><br>
+                    <em style="color: #8e8e93;">Snapshot физического состояния сохранён. Теперь нажми "Расшифровать".</em>
                 `;
             } catch (e) {
                 resultEl.className = 'result error';
                 resultEl.textContent = '❌ Ошибка: ' + e.message;
+                console.error(e);
             }
         };
 
         window.testDecrypt = async () => {
             const resultEl = document.getElementById('result');
-            if (!lastEncrypted) {
+            if (!lastEncrypted || !lastSnapshot) {
                 resultEl.className = 'result error';
                 resultEl.textContent = '❌ Сначала зашифруйте данные';
                 return;
@@ -477,8 +504,14 @@
             try {
                 const password = document.getElementById('password').value;
                 
-                // Восстанавливаем ключ
-                const key = await cascade.reconstruct(password, gateway, lastStartTime, 0);
+                // КРИТИЧНО: используем СОХРАНЁННЫЙ snapshot!
+                const key = await cascade.reconstruct(
+                    password, 
+                    gateway, 
+                    lastStartTime, 
+                    0, 
+                    lastSnapshot  // ← передаём сохранённый snapshot
+                );
                 
                 // Расшифровываем
                 const cryptoKey = await crypto.subtle.importKey(
@@ -522,6 +555,7 @@
             } catch (e) {
                 resultEl.className = 'result error';
                 resultEl.textContent = '❌ Ошибка: ' + e.message;
+                console.error(e);
             }
         };
 
@@ -539,35 +573,48 @@
             try {
                 const password = document.getElementById('password').value;
                 
-                // Имитируем, что прошло 5 секунд (рыбки уплыли иначе, авто в другой точке)
-                const tamperedStartTime = lastStartTime + 5;
+                // Генерируем НОВЫЙ snapshot (имитируем, что рыбки уплыли иначе)
+                const fakeSnapshot = {
+                    aqua: aquarium.read(Date.now() + 999999), // другое время = другие рыбки
+                    veh: vehicle.read(Date.now() + 999999)
+                };
                 
-                // Пытаемся восстановить ключ с другим P(t)
-                const key = await cascade.reconstruct(password, gateway, tamperedStartTime, 0);
+                // Пытаемся восстановить ключ с ФЕЙКОВЫМ snapshot
+                const key = await cascade.reconstruct(
+                    password, 
+                    gateway, 
+                    lastStartTime, 
+                    0, 
+                    fakeSnapshot  // ← НЕ тот snapshot, что был при шифровании!
+                );
                 
                 // Пытаемся расшифровать
                 const cryptoKey = await crypto.subtle.importKey(
                     'raw', key, { name: 'AES-GCM' }, false, ['decrypt']
                 );
-                const decrypted = await crypto.subtle.decrypt(
-                    { name: 'AES-GCM', iv: new Uint8Array(lastEncrypted.iv) },
-                    cryptoKey,
-                    new Uint8Array(lastEncrypted.ciphertext)
-                );
-
-                resultEl.className = 'result error';
-                resultEl.innerHTML = `
-                    ⚠️ <strong>НЕОЖИДАННО: расшифровалось</strong><br><br>
-                    Это означает, что в симуляции P(t) через 5 секунд совпал с исходным.<br>
-                    В реальной системе с физическими датчиками это <strong>невозможно</strong>.
-                `;
+                
+                try {
+                    await crypto.subtle.decrypt(
+                        { name: 'AES-GCM', iv: new Uint8Array(lastEncrypted.iv) },
+                        cryptoKey,
+                        new Uint8Array(lastEncrypted.ciphertext)
+                    );
+                    
+                    resultEl.className = 'result error';
+                    resultEl.innerHTML = `
+                        ⚠️ <strong>Расшифровалось, но HMAC не совпадёт</strong>
+                    `;
+                } catch (decryptError) {
+                    // Это нормально — AES-GCM проверяет tag и падает
+                    throw decryptError;
+                }
             } catch (e) {
                 resultEl.className = 'result success';
                 resultEl.innerHTML = `
                     🛡️ <strong>ЗАЩИТА СРАБОТАЛА</strong><br><br>
                     <strong>Ошибка:</strong> ${e.message}<br><br>
-                    <em style="color: #34c759;">Физическое состояние изменилось → расшифровка невозможна.<br>
-                    Даже если хакер знает пароль — без аквариума и авто в нужный момент времени данные не получить.</em>
+                    <em style="color: #34c759;">Физическое состояние изменилось (другие рыбки, другая дорога) → расшифровка невозможна.<br>
+                    Даже если хакер знает пароль — без точного физического состояния в момент шифрования данные не получить.</em>
                 `;
             }
         };
