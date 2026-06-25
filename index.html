@@ -124,6 +124,8 @@
             font-weight: 600; background: rgba(102,126,234,0.15); color: #667eea; margin-left: 8px;
         }
         .tag.real { background: rgba(255,149,0,0.15); color: #ff9500; }
+        .tag.live { background: rgba(52,199,89,0.15); color: #34c759; }
+        .tag.fallback { background: rgba(255,59,48,0.15); color: #ff3b30; }
         .strength-meter { display: flex; gap: 4px; margin-top: 8px; }
         .strength-bar {
             flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; transition: all 0.3s;
@@ -142,7 +144,7 @@
 <body>
     <div class="container">
         <h1>🔐 NEXUS74 <span class="tag">OMNI</span> <span class="tag real">REAL CAR</span></h1>
-        <div class="subtitle">Протокол Омни-энтропии. Шифрование привязано к состоянию аквариума, <b>реальным данным авто (ELM327)</b> и <b>реальным рынкам MOEX</b>.</div>
+        <div class="subtitle">Протокол Омни-энтропии. Шифрование привязано к состоянию аквариума, <b>реальным данным авто (ELM327)</b> и <b>рынкам MOEX</b>.</div>
 
         <div class="panel">
             <h3><span class="live-indicator"></span>🐠 Аквариум (Микро)</h3>
@@ -155,7 +157,7 @@
         </div>
 
         <div class="panel">
-            <h3><span class="live-indicator"></span>🇷🇺 Российские рынки <span class="tag real">MOEX LIVE</span></h3>
+            <h3><span class="live-indicator"></span>🇷🇺 Российские рынки <span id="moexTag" class="tag live">MOEX LIVE</span></h3>
             <pre id="global">загрузка...</pre>
         </div>
 
@@ -171,10 +173,10 @@
         </div>
 
         <div class="panel">
-            <h3>️ Режим шифрования</h3>
+            <h3>🛡️ Режим шифрования</h3>
             <div class="mode-selector">
                 <button class="mode-btn active" onclick="setMode('std', this)">🟢 Стандарт<br>256 бит</button>
-                <button class="mode-btn" onclick="setMode('par', this)"> Параноик<br>1024 бита</button>
+                <button class="mode-btn" onclick="setMode('par', this)">🟡 Параноик<br>1024 бита</button>
                 <button class="mode-btn" onclick="setMode('otp', this)">🔴 Абсолют<br>∞ бит (OTP)</button>
             </div>
             <div class="strength-meter" id="strengthMeter">
@@ -192,9 +194,9 @@
                 <textarea id="msg" placeholder="Секретное сообщение">челябинск</textarea>
             </div>
             <div class="button-group">
-                <button onclick="doEncrypt()" class="success" id="encBtn">🔒 Зашифровать</button>
-                <button onclick="doDecrypt()" id="decBtn">🔓 Расшифровать</button>
-                <button onclick="doTamper()" class="danger">⚠️ Атака (Чужие рыбки)</button>
+                <button onclick="doEncrypt()" class="success" id="encBtn"> Зашифровать</button>
+                <button onclick="doDecrypt()" id="decBtn"> Расшифровать</button>
+                <button onclick="doTamper()" class="danger">️ Атака (Чужие рыбки)</button>
             </div>
             <div class="result info" id="res">Готов к работе. Выберите режим и нажмите "Зашифровать".</div>
         </div>
@@ -203,8 +205,8 @@
             <h3>📖 Как это работает?</h3>
             <div style="font-size: 12px; line-height: 1.6; color: #c0c0c0;">
                 <p><strong style="color: #34c759;">🟢 Стандарт (256 бит):</strong> AES-256-GCM. Ключ = SHA-256(Аквариум + Авто + MOEX + Пароль). Невзламываемо.</p>
-                <p style="margin-top:8px;"><strong style="color: #ff9500;">🟡 Параноик (1024 бит):</strong> 4 слоя AES-256. Каждый слой использует свой срез энтропии. Взлом требует перебора 2^1024 вариантов.</p>
-                <p style="margin-top:8px;"><strong style="color: #ff3b30;">🔴 Абсолют (OTP):</strong> Одноразовый блокнот. Длина ключа = длине сообщения. Идеальная криптография (доказано Шенноном).</p>
+                <p style="margin-top:8px;"><strong style="color: #ff9500;">🟡 Параноик (1024 бит):</strong> 4 слоя AES-256. Каждый слой использует свой срез энтропии.</p>
+                <p style="margin-top:8px;"><strong style="color: #ff3b30;">🔴 Абсолют (OTP):</strong> Одноразовый блокнот. Длина ключа = длине сообщения. Идеальная криптография (Шеннон, 1949).</p>
             </div>
         </div>
     </div>
@@ -215,7 +217,8 @@
     let lastEnc = null;
     let changes = 0;
     let startTime = Date.now();
-    let lastMoexData = null; // Кэш для MOEX (обновляется раз в 10 сек)
+    let lastMoexData = null;
+    let moexSource = 'live'; // 'live' или 'fallback'
 
     // ===== ДЕТЕРМИНИРОВАННЫЙ PRNG =====
     function rng(seed) {
@@ -225,7 +228,6 @@
 
     // ===== ИСТОЧНИКИ ЭНТРОПИИ =====
     
-    // 1. Аквариум (Симуляция)
     function getAqua(t) {
         const r = rng(t);
         return {
@@ -235,10 +237,8 @@
         };
     }
 
-    // 2. АВТОМОБИЛЬ (РЕАЛЬНЫЕ ДАННЫЕ ИЗ ВИДЕО!)
     function getCar(t) {
         const r = rng(t);
-        // Данные из Car Scanner: RPM 700-900, Temp 101, Pressure 40-45, Throttle ~12%
         return {
             source: 'elm327_real',
             rpm: 750 + Math.sin(t/2000)*100 + r()*50,
@@ -251,20 +251,45 @@
         };
     }
 
-    // 3. РЕАЛЬНЫЙ MOEX API через CORS-прокси
-    async function getMoexReal() {
-        const proxy = 'https://corsproxy.io/?';
+    // ===== РЕАЛЬНЫЙ MOEX API С НЕСКОЛЬКИМИ ПРОКСИ =====
+    const CORS_PROXIES = [
+        'https://corsproxy.io/?',
+        'https://api.allorigins.win/raw?url=',
+        'https://cors-anywhere.herokuapp.com/',
+        'https://thingproxy.freeboard.io/fetch/'
+    ];
+
+    async function fetchWithProxy(url, proxyIndex = 0) {
+        if (proxyIndex >= CORS_PROXIES.length) {
+            throw new Error('All proxies failed');
+        }
+        
+        const proxy = CORS_PROXIES[proxyIndex];
+        const fullUrl = proxy + encodeURIComponent(url);
         
         try {
-            const [sberResp, moexResp, usdResp] = await Promise.all([
-                fetch(proxy + encodeURIComponent('https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER.json?securities.columns=LAST')),
-                fetch(proxy + encodeURIComponent('https://iss.moex.com/iss/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json?securities.columns=LAST')),
-                fetch(proxy + encodeURIComponent('https://iss.moex.com/iss/engines/currency/markets/selt/securities/USD000UTSTOM.json?securities.columns=LAST'))
-            ]);
+            const response = await fetch(fullUrl, { 
+                headers: { 'Accept': 'application/json' },
+                timeout: 5000
+            });
+            
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const text = await response.text();
+            return JSON.parse(text);
+        } catch (e) {
+            console.warn(`Proxy ${proxyIndex} failed:`, e.message);
+            return fetchWithProxy(url, proxyIndex + 1);
+        }
+    }
 
-            const sberData = await sberResp.json();
-            const moexData = await moexResp.json();
-            const usdData = await usdResp.json();
+    async function getMoexReal() {
+        try {
+            const [sberData, moexData, usdData] = await Promise.all([
+                fetchWithProxy('https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER.json?securities.columns=LAST'),
+                fetchWithProxy('https://iss.moex.com/iss/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json?securities.columns=LAST'),
+                fetchWithProxy('https://iss.moex.com/iss/engines/currency/markets/selt/securities/USD000UTSTOM.json?securities.columns=LAST')
+            ]);
 
             const sber = sberData.securities?.data?.[0]?.[0] || 265;
             const moex = moexData.securities?.data?.[0]?.[0] || 3150;
@@ -279,22 +304,40 @@
             };
         } catch (e) {
             console.warn('MOEX API error, using fallback:', e);
-            return {
-                source: 'moex_fallback',
-                timestamp: Date.now(),
-                sber: 265 + Math.random() * 2,
-                moex: 3150 + Math.random() * 10,
-                usd: 90 + Math.random()
-            };
+            return null;
         }
     }
 
-    // Кэшированная версия (обновляется раз в 10 секунд)
+    function getMoexFallback() {
+        const t = Date.now();
+        const r = rng(t + 7777);
+        return {
+            source: 'moex_fallback',
+            timestamp: t,
+            sber: 265 + Math.sin(t/100000)*5 + r()*3,
+            moex: 3150 + Math.cos(t/80000)*20 + r()*10,
+            usd: 90 + Math.sin(t/120000)*1 + (r()-0.5)*0.5
+        };
+    }
+
     async function getMoex() {
         const now = Date.now();
-        if (!lastMoexData || (now - lastMoexData.timestamp) > 10000) {
-            lastMoexData = await getMoexReal();
+        
+        // Обновляем каждые 15 секунд
+        if (!lastMoexData || (now - lastMoexData.timestamp) > 15000) {
+            const realData = await getMoexReal();
+            
+            if (realData) {
+                lastMoexData = realData;
+                moexSource = 'live';
+            } else if (!lastMoexData) {
+                // Первый запуск и API не работает — используем fallback
+                lastMoexData = getMoexFallback();
+                moexSource = 'fallback';
+            }
+            // Если есть кэш, но API упал — оставляем старый кэш
         }
+        
         return lastMoexData;
     }
 
@@ -333,7 +376,6 @@
         return new Uint8Array(pt);
     }
 
-    // Режимы шифрования
     async function encStd(data, pwd, snap) {
         const fp = await sha256(snap);
         const key = await makeKey(pwd, fp);
@@ -420,6 +462,16 @@
         
         const moexData = await getMoex();
         document.getElementById('global').textContent = JSON.stringify(moexData, null, 2);
+        
+        // Обновляем тег MOEX
+        const moexTag = document.getElementById('moexTag');
+        if (moexSource === 'live') {
+            moexTag.textContent = 'MOEX LIVE';
+            moexTag.className = 'tag live';
+        } else {
+            moexTag.textContent = 'MOEX SIM';
+            moexTag.className = 'tag fallback';
+        }
 
         const ts = Math.floor(t / 1000);
         const fp = await sha256({ a: getAqua(ts), v: getCar(ts), m: moexData, t: ts });
@@ -468,7 +520,7 @@
         const res = document.getElementById('res');
         if (!lastEnc) { res.className = 'result error'; res.textContent = '❌ Сначала зашифруйте'; return; }
         res.className = 'result info';
-        res.textContent = ' Расшифровка...';
+        res.textContent = '⏳ Расшифровка...';
 
         try {
             const pwd = document.getElementById('pwd').value;
@@ -518,7 +570,7 @@
             res.innerHTML = '⚠️ Расшифровалось (в симуляции возможно совпадение ключей).<br><small>В реальности с физическими датчиками это невозможно.</small>';
         } catch (e) {
             res.className = 'result success';
-            res.innerHTML = `🛡️ <b>ЗАЩИТА СРАБОТАЛА!</b><br>${e.message}<br><br><small style="color:#34c759">Мир изменился (другие рыбки, другие обороты двигателя) → ключ не совпал → доступ запрещён.</small>`;
+            res.innerHTML = `️ <b>ЗАЩИТА СРАБОТАЛА!</b><br>${e.message}<br><br><small style="color:#34c759">Мир изменился (другие рыбки, другие обороты двигателя) → ключ не совпал → доступ запрещён.</small>`;
         }
     };
 
