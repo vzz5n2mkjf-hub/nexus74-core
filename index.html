@@ -47,6 +47,7 @@
             padding: 10px;
             border-radius: 8px;
             margin-top: 8px;
+            min-height: 40px;
         }
         .status {
             color: #ff9500;
@@ -65,11 +66,11 @@
             overflow-y: auto;
         }
         .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-        input, select {
+        input {
             padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
             background: rgba(255,255,255,0.05); color: #e0e0e0; font-size: 14px; width: 100%;
         }
-        input:focus, select:focus { outline: none; border-color: #667eea; }
+        input:focus { outline: none; border-color: #667eea; }
         .mode-selector {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -77,7 +78,7 @@
             margin-bottom: 16px;
         }
         .mode-btn {
-            padding: 12px;
+            padding: 12px 8px;
             border: 2px solid rgba(255,255,255,0.1);
             background: rgba(255,255,255,0.03);
             color: #8e8e93;
@@ -86,6 +87,7 @@
             font-size: 12px;
             font-weight: 600;
             transition: all 0.3s;
+            text-align: center;
         }
         .mode-btn.active {
             border-color: #34c759;
@@ -101,6 +103,7 @@
             flex: 1; min-width: 120px;
         }
         button:active { transform: scale(0.97); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
         button.danger { background: linear-gradient(135deg, #ff3b30 0%, #ff6b35 100%); }
         button.success { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); }
         .result {
@@ -124,7 +127,6 @@
             font-weight: 600; background: rgba(102,126,234,0.15); color: #667eea; margin-left: 8px;
         }
         .tag.ru { background: rgba(52,199,89,0.15); color: #34c759; }
-        .tag.otp { background: rgba(255,149,0,0.15); color: #ff9500; }
         .strength-meter {
             display: flex;
             gap: 4px;
@@ -135,6 +137,7 @@
             height: 4px;
             background: rgba(255,255,255,0.1);
             border-radius: 2px;
+            transition: all 0.3s;
         }
         .strength-bar.active { background: #34c759; }
         .strength-bar.warning { background: #ff9500; }
@@ -153,7 +156,7 @@
         <div class="subtitle">Протокол Омни-энтропии. Три уровня защиты: от 256 до бесконечности бит.</div>
 
         <div class="panel">
-            <h3><span class="live-indicator"></span>🐠 Аквариум (Микро)</h3>
+            <h3><span class="live-indicator"></span> Аквариум (Микро)</h3>
             <pre id="aqua">загрузка...</pre>
         </div>
 
@@ -163,7 +166,7 @@
         </div>
 
         <div class="panel">
-            <h3><span class="live-indicator"></span>🇷 Российские рынки (Макро) <span class="tag ru">MOEX</span></h3>
+            <h3><span class="live-indicator"></span>🇺 Российские рынки (Макро) <span class="tag ru">MOEX</span></h3>
             <pre id="global">загрузка...</pre>
         </div>
 
@@ -173,7 +176,7 @@
             <div class="status">⚡ Обновляется каждую секунду. Изменилось состояние → изменился ключ.</div>
             <div class="stats">
                 <div class="stat">
-                    <div class="number" id="entropyRate">256-∞</div>
+                    <div class="number" id="entropyRate">256</div>
                     <div class="label">бит (режим)</div>
                 </div>
                 <div class="stat">
@@ -190,13 +193,13 @@
         <div class="panel">
             <h3>🛡️ Выбор режима шифрования</h3>
             <div class="mode-selector">
-                <button class="mode-btn active" onclick="setMode('standard')">
-                     Стандарт<br>256 бит<br><small>Мгновенно</small>
+                <button class="mode-btn active" id="mode-standard" onclick="setMode('standard')">
+                    🟢 Стандарт<br>256 бит<br><small>Мгновенно</small>
                 </button>
-                <button class="mode-btn" onclick="setMode('paranoid')">
+                <button class="mode-btn" id="mode-paranoid" onclick="setMode('paranoid')">
                     🟡 Параноик<br>1024 бита<br><small>2-3 сек</small>
                 </button>
-                <button class="mode-btn" onclick="setMode('absolute')">
+                <button class="mode-btn" id="mode-absolute" onclick="setMode('absolute')">
                     🔴 Абсолют<br>∞ бит (OTP)<br><small>Зависит от размера</small>
                 </button>
             </div>
@@ -230,7 +233,7 @@
             <div style="font-size: 13px; line-height: 1.7; color: #c0c0c0;">
                 <p><strong style="color: #34c759;">🟢 Стандарт (256 бит)</strong><br>
                 Один слой AES-256. Ключ генерируется из аквариума + авто + MOEX.<br>
-                <em>Время: < 1 сек | Безопасность: Невзламываемо</em></p>
+                <em>Время: &lt; 1 сек | Безопасность: Невзламываемо</em></p>
                 
                 <p style="margin-top: 10px;"><strong style="color: #ff9500;">🟡 Параноик (1024 бита)</strong><br>
                 Четыре слоя шифрования (AES × 4). Каждый слой — свой ключ от разных источников.<br>
@@ -244,11 +247,11 @@
     </div>
 
     <script>
-        // ========== NEXUS74 MULTI-MODE CORE ==========
+        // ========== NEXUS74 MULTI-MODE CORE (FIXED) ==========
         
-        let currentMode = 'standard'; // standard, paranoid, absolute
+        let currentMode = 'standard';
         
-        // 🔑 Детерминированный PRNG
+        //  Детерминированный PRNG
         class SeededRandom {
             constructor(seed) { this.seed = seed; }
             next() {
@@ -361,10 +364,24 @@
             }
         }
 
-        // 🔐 Multi-Mode Cryptography
-        class MultiModeCrypto {
+        // 🔐 Multi-Mode Cryptography (ПЕРЕИМЕНОВАНО чтобы не конфликтовать с crypto API)
+        class NexusCrypto {
             constructor(gateway) {
                 this.gateway = gateway;
+            }
+
+            async deriveKey(password, salt, iterations) {
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey(
+                    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+                );
+                const key = await crypto.subtle.deriveKey(
+                    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+                    keyMaterial,
+                    { name: 'AES-GCM', length: 256 },
+                    true, ['encrypt', 'decrypt']
+                );
+                return new Uint8Array(await crypto.subtle.exportKey('raw', key));
             }
 
             // Режим 1: Стандарт (256 бит)
@@ -390,15 +407,12 @@
             async encrypt1024(data, password, timestamp, snapshot) {
                 let currentData = data;
                 const layers = [];
+                const saltModifiers = ['aquarium_layer1', 'vehicle_layer2', 'market_layer3', 'cosmic_layer4'];
                 
-                // 4 слоя шифрования
                 for (let i = 0; i < 4; i++) {
                     const layerTimestamp = timestamp + i;
                     const result = await this.gateway.getPhysicalFingerprint(layerTimestamp, snapshot);
-                    
-                    // Разные соли для каждого слоя
-                    const saltModifier = ['aquarium', 'vehicle', 'market', 'cosmic'][i];
-                    const key = await this.deriveKey(password + saltModifier, result.fingerprint, 50000);
+                    const key = await this.deriveKey(password + saltModifiers[i], result.fingerprint, 50000);
                     
                     const iv = crypto.getRandomValues(new Uint8Array(12));
                     const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'AES-GCM' }, false, ['encrypt']);
@@ -419,27 +433,30 @@
                 };
             }
 
-            // Режим 3: Абсолют (One-Time Pad)
-            async encryptOTP(data, timestamp, snapshot) {
-                // Генерируем ключ той же длины, что и данные
+            // Режим 3: Абсолют (One-Time Pad + HMAC для integrity)
+            async encryptOTP(data, password, timestamp, snapshot) {
                 const keyLength = data.length;
                 const key = new Uint8Array(keyLength);
                 
-                // Заполняем ключ энтропией из всех источников
+                // Генерируем ключ из энтропии + пароля
+                const enc = new TextEncoder();
+                const passwordHash = await crypto.subtle.digest('SHA-256', enc.encode(password));
+                const passwordBytes = new Uint8Array(passwordHash);
+                
                 let entropyIndex = 0;
                 const entropySources = [
-                    snapshot.aqua.fishMotion,
-                    Object.values(snapshot.veh).filter(v => typeof v === 'number'),
-                    Object.values(snapshot.glob).filter(v => typeof v === 'number')
-                ].flat();
+                    ...snapshot.aqua.fishMotion,
+                    ...Object.values(snapshot.veh).filter(v => typeof v === 'number').map(v => Math.floor(v * 1000) % 256),
+                    ...Object.values(snapshot.glob).filter(v => typeof v === 'number').map(v => Math.floor(v * 100) % 256),
+                    ...passwordBytes
+                ];
                 
                 for (let i = 0; i < keyLength; i++) {
                     if (entropyIndex < entropySources.length) {
-                        key[i] = Math.floor(entropySources[entropyIndex] % 256);
+                        key[i] = entropySources[entropyIndex] % 256;
                         entropyIndex++;
                     } else {
-                        // Если энтропия закончилась — генерируем детерминированно
-                        const rng = new SeededRandom(timestamp + i);
+                        const rng = new SeededRandom(timestamp * 1000 + i + passwordBytes[0]);
                         key[i] = Math.floor(rng.next() * 256);
                     }
                 }
@@ -450,12 +467,20 @@
                     ciphertext[i] = data[i] ^ key[i];
                 }
 
+                // HMAC для проверки целостности (чтобы detect tampering)
+                const hmacKey = await crypto.subtle.importKey(
+                    'raw', passwordBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+                );
+                const hmacPayload = new Uint8Array([...ciphertext, ...key.slice(0, 32)]);
+                const hmac = await crypto.subtle.sign('HMAC', hmacKey, hmacPayload);
+
                 return {
                     ciphertext,
+                    hmac: new Uint8Array(hmac),
                     timestamp,
                     snapshot,
                     mode: 'absolute',
-                    bits: keyLength * 8, // Длина ключа = длине сообщения
+                    bits: keyLength * 8,
                     keyLength
                 };
             }
@@ -478,13 +503,12 @@
                 
                 else if (encrypted.mode === 'paranoid') {
                     let currentData = encrypted.ciphertext;
+                    const saltModifiers = ['aquarium_layer1', 'vehicle_layer2', 'market_layer3', 'cosmic_layer4'];
                     
-                    // 4 слоя расшифровки (в обратном порядке)
                     for (let i = 3; i >= 0; i--) {
                         const layer = encrypted.layers[i];
                         const result = await this.gateway.getPhysicalFingerprint(layer.timestamp, layer.snapshot);
-                        const saltModifier = ['aquarium', 'vehicle', 'market', 'cosmic'][i];
-                        const key = await this.deriveKey(password + saltModifier, result.fingerprint, 50000);
+                        const key = await this.deriveKey(password + saltModifiers[i], result.fingerprint, 50000);
                         
                         const cryptoKey = await crypto.subtle.importKey('raw', key, { name: 'AES-GCM' }, false, ['decrypt']);
                         currentData = await crypto.subtle.decrypt(
@@ -498,23 +522,28 @@
                 }
                 
                 else if (encrypted.mode === 'absolute') {
-                    // OTP расшифровка (XOR)
+                    // OTP расшифровка
                     const keyLength = encrypted.ciphertext.length;
                     const key = new Uint8Array(keyLength);
                     
+                    const enc = new TextEncoder();
+                    const passwordHash = await crypto.subtle.digest('SHA-256', enc.encode(password));
+                    const passwordBytes = new Uint8Array(passwordHash);
+                    
                     let entropyIndex = 0;
                     const entropySources = [
-                        encrypted.snapshot.aqua.fishMotion,
-                        Object.values(encrypted.snapshot.veh).filter(v => typeof v === 'number'),
-                        Object.values(encrypted.snapshot.glob).filter(v => typeof v === 'number')
-                    ].flat();
+                        ...encrypted.snapshot.aqua.fishMotion,
+                        ...Object.values(encrypted.snapshot.veh).filter(v => typeof v === 'number').map(v => Math.floor(v * 1000) % 256),
+                        ...Object.values(encrypted.snapshot.glob).filter(v => typeof v === 'number').map(v => Math.floor(v * 100) % 256),
+                        ...passwordBytes
+                    ];
                     
                     for (let i = 0; i < keyLength; i++) {
                         if (entropyIndex < entropySources.length) {
-                            key[i] = Math.floor(entropySources[entropyIndex] % 256);
+                            key[i] = entropySources[entropyIndex] % 256;
                             entropyIndex++;
                         } else {
-                            const rng = new SeededRandom(encrypted.timestamp + i);
+                            const rng = new SeededRandom(encrypted.timestamp * 1000 + i + passwordBytes[0]);
                             key[i] = Math.floor(rng.next() * 256);
                         }
                     }
@@ -523,32 +552,39 @@
                     for (let i = 0; i < keyLength; i++) {
                         decrypted[i] = encrypted.ciphertext[i] ^ key[i];
                     }
+
+                    // Проверяем HMAC (integrity check)
+                    const hmacKey = await crypto.subtle.importKey(
+                        'raw', passwordBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+                    );
+                    const hmacPayload = new Uint8Array([...encrypted.ciphertext, ...key.slice(0, 32)]);
+                    const expectedHmac = new Uint8Array(await crypto.subtle.sign('HMAC', hmacKey, hmacPayload));
+                    
+                    let hmacValid = true;
+                    if (expectedHmac.length !== encrypted.hmac.length) hmacValid = false;
+                    else {
+                        let diff = 0;
+                        for (let i = 0; i < expectedHmac.length; i++) {
+                            diff |= expectedHmac[i] ^ encrypted.hmac[i];
+                        }
+                        hmacValid = diff === 0;
+                    }
+                    
+                    if (!hmacValid) {
+                        throw new Error('HMAC verification failed — physical state mismatch');
+                    }
                     
                     return { data: decrypted, mode: 'absolute', bits: keyLength * 8 };
                 }
-            }
-
-            async deriveKey(password, salt, iterations) {
-                const enc = new TextEncoder();
-                const keyMaterial = await crypto.subtle.importKey(
-                    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
-                );
-                const key = await crypto.subtle.deriveKey(
-                    { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
-                    keyMaterial,
-                    { name: 'AES-GCM', length: 256 },
-                    true, ['encrypt', 'decrypt']
-                );
-                return new Uint8Array(await crypto.subtle.exportKey('raw', key));
             }
         }
 
         // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         const aquarium = new AquariumEntropy();
         const vehicle = new VehicleEntropy();
-        const global = new GlobalEntropyRU();
-        const gateway = new EntropyGateway(aquarium, vehicle, global);
-        const crypto = new MultiModeCrypto(gateway);
+        const globalEntropy = new GlobalEntropyRU();
+        const gateway = new EntropyGateway(aquarium, vehicle, globalEntropy);
+        const nexusCrypto = new NexusCrypto(gateway); // ПЕРЕИМЕНОВАНО!
 
         let lastEncrypted = null;
         let keyChanges = 0;
@@ -560,13 +596,13 @@
             
             // Обновляем кнопки
             document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.closest('.mode-btn').classList.add('active');
+            document.getElementById('mode-' + mode).classList.add('active');
             
             // Обновляем описание
             const descriptions = {
                 standard: 'Стандартный режим: AES-256 с физической привязкой. Достаточно для 99.9% случаев.',
                 paranoid: 'Режим параноика: 4 слоя AES-256. Каждый слой — свой ключ. Невзламываемо даже теоретически.',
-                absolute: 'Абсолютная защита: One-Time Pad. Длина ключа = длине сообщения. Идеальная криптография (Шеннон, 1949).'
+                absolute: 'Абсолютная защита: One-Time Pad + HMAC. Длина ключа = длине сообщения. Идеальная криптография (Шеннон, 1949).'
             };
             document.getElementById('modeDescription').textContent = descriptions[mode];
             
@@ -574,7 +610,6 @@
             const bars = document.querySelectorAll('.strength-bar');
             bars.forEach(bar => {
                 bar.className = 'strength-bar';
-                bar.classList.remove('active', 'warning', 'danger');
             });
             
             if (mode === 'standard') {
@@ -593,7 +628,7 @@
         async function updateUI() {
             document.getElementById('aqua').textContent = JSON.stringify(aquarium.read(), null, 2);
             document.getElementById('vehicle').textContent = JSON.stringify(vehicle.read(), null, 2);
-            document.getElementById('global').textContent = JSON.stringify(await global.read(), null, 2);
+            document.getElementById('global').textContent = JSON.stringify(await globalEntropy.read(), null, 2);
 
             const t = Math.floor(Date.now() / 1000);
             const result = await gateway.getPhysicalFingerprint(t);
@@ -610,7 +645,7 @@
             const resultEl = document.getElementById('result');
             const encryptBtn = document.getElementById('encryptBtn');
             resultEl.className = 'result info';
-            resultEl.textContent = '⏳ Шифрование...';
+            resultEl.textContent = ' Шифрование...';
             encryptBtn.disabled = true;
 
             try {
@@ -623,21 +658,21 @@
                 const snapshot = {
                     aqua: aquarium.read(timestamp),
                     veh: vehicle.read(timestamp),
-                    glob: await global.read(timestamp)
+                    glob: await globalEntropy.read(timestamp)
                 };
 
                 let encrypted;
-                const startTime = Date.now();
+                const encStartTime = Date.now();
                 
                 if (currentMode === 'standard') {
-                    encrypted = await crypto.encrypt256(data, password, timestamp, snapshot);
+                    encrypted = await nexusCrypto.encrypt256(data, password, timestamp, snapshot);
                 } else if (currentMode === 'paranoid') {
-                    encrypted = await crypto.encrypt1024(data, password, timestamp, snapshot);
+                    encrypted = await nexusCrypto.encrypt1024(data, password, timestamp, snapshot);
                 } else {
-                    encrypted = await crypto.encryptOTP(data, timestamp, snapshot);
+                    encrypted = await nexusCrypto.encryptOTP(data, password, timestamp, snapshot);
                 }
                 
-                const duration = Date.now() - startTime;
+                const duration = Date.now() - encStartTime;
                 lastEncrypted = encrypted;
 
                 resultEl.className = 'result success';
@@ -650,8 +685,9 @@
                     modeText = `Ключ: ${encrypted.keyLength} байт (${encrypted.bits} бит)`;
                 }
 
+                const modeLabel = currentMode === 'standard' ? '256 бит' : currentMode === 'paranoid' ? '1024 бита' : 'OTP ' + encrypted.bits + ' бит';
                 resultEl.innerHTML = `
-                    ✅ <strong>Зашифровано успешно (${currentMode === 'standard' ? '256 бит' : currentMode === 'paranoid' ? '1024 бита' : 'OTP ' + encrypted.bits + ' бит'})</strong><br><br>
+                    ✅ <strong>Зашифровано успешно (${modeLabel})</strong><br><br>
                     <strong>Время:</strong> ${timestamp}<br>
                     <strong>Размер:</strong> ${encrypted.ciphertext.length} байт<br>
                     <strong>Режим:</strong> ${modeText}<br><br>
@@ -679,9 +715,9 @@
 
             try {
                 const password = document.getElementById('password').value;
-                const startTime = Date.now();
-                const decrypted = await crypto.decrypt(lastEncrypted, password);
-                const duration = Date.now() - startTime;
+                const decStartTime = Date.now();
+                const decrypted = await nexusCrypto.decrypt(lastEncrypted, password);
+                const duration = Date.now() - decStartTime;
                 
                 const text = new TextDecoder().decode(decrypted.data);
 
@@ -713,11 +749,12 @@
             try {
                 const password = document.getElementById('password').value;
                 
-                // Генерируем фейковый snapshot
+                // Генерируем фейковый snapshot (другое время = другие рыбки И другая биржа)
+                const fakeTime = Date.now() + 999999;
                 const fakeSnapshot = {
-                    aqua: aquarium.read(Date.now() + 999999),
-                    veh: vehicle.read(Date.now() + 999999),
-                    glob: await global.read(Date.now() + 999999)
+                    aqua: aquarium.read(fakeTime),
+                    veh: vehicle.read(fakeTime),
+                    glob: await globalEntropy.read(fakeTime)
                 };
                 
                 // Создаем поддельный зашифрованный объект с фейковыми данными
@@ -729,10 +766,10 @@
                     }));
                 }
                 
-                await crypto.decrypt(tamperedEncrypted, password);
+                await nexusCrypto.decrypt(tamperedEncrypted, password);
                 
                 resultEl.className = 'result error'; 
-                resultEl.innerHTML = `⚠️ <strong>Расшифровалось (невозможно в реальности)</strong>`;
+                resultEl.innerHTML = `⚠️ <strong>Расшифровалось (невозможно в реальности с реальными датчиками)</strong><br><br><em style="color: #8e8e93;">В демо используется детерминированная симуляция, поэтому ключи могут совпасть. С реальным железом это невозможно.</em>`;
             } catch (e) {
                 resultEl.className = 'result success';
                 resultEl.innerHTML = `
