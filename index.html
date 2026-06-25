@@ -196,7 +196,7 @@
             <div class="button-group">
                 <button onclick="doEncrypt()" class="success" id="encBtn"> Зашифровать</button>
                 <button onclick="doDecrypt()" id="decBtn"> Расшифровать</button>
-                <button onclick="doTamper()" class="danger">️ Атака (Чужие рыбки)</button>
+                <button onclick="doTamper()" class="danger">⚠️ Атака (Чужие рыбки)</button>
             </div>
             <div class="result info" id="res">Готов к работе. Выберите режим и нажмите "Зашифровать".</div>
         </div>
@@ -218,7 +218,7 @@
     let changes = 0;
     let startTime = Date.now();
     let lastMoexData = null;
-    let moexSource = 'live'; // 'live' или 'fallback'
+    let moexSource = 'live'; 
 
     // ===== ДЕТЕРМИНИРОВАННЫЙ PRNG =====
     function rng(seed) {
@@ -251,59 +251,85 @@
         };
     }
 
-    // ===== РЕАЛЬНЫЙ MOEX API С НЕСКОЛЬКИМИ ПРОКСИ =====
+    // ===== РЕАЛЬНЫЙ MOEX API С ЛОГИРОВАНИЕМ =====
     const CORS_PROXIES = [
         'https://corsproxy.io/?',
         'https://api.allorigins.win/raw?url=',
-        'https://cors-anywhere.herokuapp.com/',
-        'https://thingproxy.freeboard.io/fetch/'
     ];
 
     async function fetchWithProxy(url, proxyIndex = 0) {
         if (proxyIndex >= CORS_PROXIES.length) {
             throw new Error('All proxies failed');
         }
-        
         const proxy = CORS_PROXIES[proxyIndex];
         const fullUrl = proxy + encodeURIComponent(url);
         
         try {
-            const response = await fetch(fullUrl, { 
-                headers: { 'Accept': 'application/json' },
-                timeout: 5000
-            });
-            
+            const response = await fetch(fullUrl, { headers: { 'Accept': 'application/json' } });
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const text = await response.text();
-            return JSON.parse(text);
+            return await response.json();
         } catch (e) {
             console.warn(`Proxy ${proxyIndex} failed:`, e.message);
             return fetchWithProxy(url, proxyIndex + 1);
         }
     }
 
+    function extractPrice(data, ticker) {
+        if (!data) return null;
+        
+        // MOEX ISS API возвращает массивы. Ищем колонку LAST и SECID
+        const sections = ['marketdata', 'securities'];
+        for (const section of sections) {
+            if (data[section] && data[section].columns && data[section].data) {
+                const lastIdx = data[section].columns.indexOf('LAST');
+                const secIdx = data[section].columns.indexOf('SECID');
+                
+                if (lastIdx !== -1) {
+                    for (const row of data[section].data) {
+                        // Если есть SECID, ищем нужный тикер. Если нет — берём первую строку.
+                        if (secIdx !== -1 && row[secIdx] !== ticker) continue;
+                        if (row[lastIdx] !== null && row[lastIdx] !== undefined) {
+                            return parseFloat(row[lastIdx]);
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     async function getMoexReal() {
+        console.log('🔄 Запрос данных MOEX...');
         try {
             const [sberData, moexData, usdData] = await Promise.all([
-                fetchWithProxy('https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER.json?securities.columns=LAST'),
-                fetchWithProxy('https://iss.moex.com/iss/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json?securities.columns=LAST'),
-                fetchWithProxy('https://iss.moex.com/iss/engines/currency/markets/selt/securities/USD000UTSTOM.json?securities.columns=LAST')
+                fetchWithProxy('https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER.json'),
+                fetchWithProxy('https://iss.moex.com/iss/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json'),
+                fetchWithProxy('https://iss.moex.com/iss/engines/currency/markets/selt/securities/USD000UTSTOM.json')
             ]);
 
-            const sber = sberData.securities?.data?.[0]?.[0] || 265;
-            const moex = moexData.securities?.data?.[0]?.[0] || 3150;
-            const usd = usdData.securities?.data?.[0]?.[0] || 90;
+            // Логируем сырые данные для отладки
+            console.log(' SBER raw:', JSON.stringify(sberData).substring(0, 200) + '...');
+            console.log('📊 IMOEX raw:', JSON.stringify(moexData).substring(0, 200) + '...');
+            console.log('📊 USD raw:', JSON.stringify(usdData).substring(0, 200) + '...');
 
-            return {
-                source: 'moex_real',
-                timestamp: Date.now(),
-                sber: sber,
-                moex: moex,
-                usd: usd
-            };
+            const sber = extractPrice(sberData, 'SBER');
+            const moex = extractPrice(moexData, 'IMOEX');
+            const usd = extractPrice(usdData, 'USD000UTSTOM');
+
+            console.log('✅ Извлечены цены:', { sber, moex, usd });
+
+            if (sber && moex && usd) {
+                return {
+                    source: 'moex_real',
+                    timestamp: Date.now(),
+                    sber: sber,
+                    moex: moex,
+                    usd: usd
+                };
+            }
+            return null;
         } catch (e) {
-            console.warn('MOEX API error, using fallback:', e);
+            console.error('❌ MOEX API error:', e);
             return null;
         }
     }
@@ -322,22 +348,16 @@
 
     async function getMoex() {
         const now = Date.now();
-        
-        // Обновляем каждые 15 секунд
         if (!lastMoexData || (now - lastMoexData.timestamp) > 15000) {
             const realData = await getMoexReal();
-            
             if (realData) {
                 lastMoexData = realData;
                 moexSource = 'live';
             } else if (!lastMoexData) {
-                // Первый запуск и API не работает — используем fallback
                 lastMoexData = getMoexFallback();
                 moexSource = 'fallback';
             }
-            // Если есть кэш, но API упал — оставляем старый кэш
         }
-        
         return lastMoexData;
     }
 
@@ -463,7 +483,6 @@
         const moexData = await getMoex();
         document.getElementById('global').textContent = JSON.stringify(moexData, null, 2);
         
-        // Обновляем тег MOEX
         const moexTag = document.getElementById('moexTag');
         if (moexSource === 'live') {
             moexTag.textContent = 'MOEX LIVE';
@@ -542,7 +561,7 @@
 
     window.doTamper = async function() {
         const res = document.getElementById('res');
-        if (!lastEnc) { res.className = 'result error'; res.textContent = '❌ Сначала зашифруйте'; return; }
+        if (!lastEnc) { res.className = 'result error'; res.textContent = ' Сначала зашифруйте'; return; }
         res.className = 'result info';
         res.textContent = '⏳ Имитация атаки (подмена состояния)...';
 
@@ -570,7 +589,7 @@
             res.innerHTML = '⚠️ Расшифровалось (в симуляции возможно совпадение ключей).<br><small>В реальности с физическими датчиками это невозможно.</small>';
         } catch (e) {
             res.className = 'result success';
-            res.innerHTML = `️ <b>ЗАЩИТА СРАБОТАЛА!</b><br>${e.message}<br><br><small style="color:#34c759">Мир изменился (другие рыбки, другие обороты двигателя) → ключ не совпал → доступ запрещён.</small>`;
+            res.innerHTML = `🛡️ <b>ЗАЩИТА СРАБОТАЛА!</b><br>${e.message}<br><br><small style="color:#34c759">Мир изменился (другие рыбки, другие обороты двигателя) → ключ не совпал → доступ запрещён.</small>`;
         }
     };
 
