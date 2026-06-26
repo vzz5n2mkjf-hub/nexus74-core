@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 import os
 
-# ===== КОНФИГУРАЦИЯ =====
+# ===== КОНФИГУРАЦИЯ БАЗЫ ДАННЫХ =====
 DB_CONFIG = {
     "host": os.environ.get("DB_HOST", "localhost"),
     "port": os.environ.get("DB_PORT", "5432"),
@@ -18,7 +18,7 @@ DB_CONFIG = {
 # ===== FASTAPI ПРИЛОЖЕНИЕ =====
 app = FastAPI(title="NEXUS74 API", version="1.0.0")
 
-# CORS для GitHub Pages
+# CORS для GitHub Pages и других источников
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # В продакшене замени на конкретные домены
@@ -34,30 +34,29 @@ class StoreRequest(BaseModel):
     mode: str
     bits: int
 
-class RetrieveResponse(BaseModel):
-    id: int
-    ciphertext: str
-    snapshot: dict
-    mode: str
-    bits: int
-    created_at: datetime
+class SensorData(BaseModel):
+    source: str
+    timestamp: int
+    data: dict
 
-# ===== ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ =====
-async def get_db_connection():
+# ===== ПОДКЛЮЧЕНИЕ К БД =====
+async def get_db():
     """Получаем подключение к PostgreSQL"""
     try:
         conn = await asyncpg.connect(**DB_CONFIG)
         return conn
     except Exception as e:
-        print(f"❌ Ошибка подключения к БД: {e}")
+        print(f"❌ DB Error: {e}")
         raise HTTPException(status_code=500, detail="Database connection failed")
 
 # ===== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ =====
 @app.on_event("startup")
 async def init_db():
-    """Создаём таблицу files при старте сервера"""
+    """Создаём таблицы при старте сервера"""
     try:
-        conn = await get_db_connection()
+        conn = await get_db()
+        
+        # Таблица для зашифрованных файлов
         await conn.execute('''
             CREATE TABLE IF NOT EXISTS files (
                 id SERIAL PRIMARY KEY,
@@ -68,31 +67,54 @@ async def init_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
+        
+        # Таблица для данных с датчиков
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS sensor_data (
+                id SERIAL PRIMARY KEY,
+                source VARCHAR(50) NOT NULL,
+                timestamp BIGINT NOT NULL,
+                data JSONB NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
         await conn.close()
-        print("✅ База данных инициализирована")
+        print("✅ Database initialized")
     except Exception as e:
-        print(f"❌ Ошибка инициализации БД: {e}")
+        print(f"❌ DB Init Error: {e}")
 
 # ===== ЭНДПОИНТЫ =====
+
+@app.get("/")
+async def root():
+    """Корневой эндпоинт"""
+    return {
+        "service": "NEXUS74 API",
+        "version": "1.0.0",
+        "status": "running"
+    }
 
 @app.get("/api/v1/health")
 async def health_check():
     """Проверка работоспособности сервера"""
     try:
-        conn = await get_db_connection()
-        result = await conn.fetchval("SELECT COUNT(*) FROM files")
+        conn = await get_db()
+        files_count = await conn.fetchval("SELECT COUNT(*) FROM files")
+        sensors_count = await conn.fetchval("SELECT COUNT(*) FROM sensor_data")
         await conn.close()
         
         return {
             "status": "ok",
             "database": "connected",
-            "total_files": result,
+            "files": files_count,
+            "sensor_records": sensors_count,
             "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         return {
             "status": "ok",
-            "database": "disconnected",
+            "database": "error",
             "error": str(e),
             "timestamp": datetime.now().isoformat()
         }
@@ -101,9 +123,8 @@ async def health_check():
 async def store_file(request: StoreRequest):
     """Сохраняем зашифрованный файл"""
     try:
-        conn = await get_db_connection()
+        conn = await get_db()
         
-        # Вставляем файл в базу
         file_id = await conn.fetchval('''
             INSERT INTO files (ciphertext, snapshot, mode, bits)
             VALUES ($1, $2, $3, $4)
@@ -112,18 +133,18 @@ async def store_file(request: StoreRequest):
         
         await conn.close()
         
-        print(f"📁 Файл сохранён: ID={file_id}, mode={request.mode}, bits={request.bits}")
+        print(f"📁 File stored: ID={file_id}, mode={request.mode}, bits={request.bits}")
         return {"status": "ok", "file_id": file_id}
     
     except Exception as e:
-        print(f"❌ Ошибка сохранения файла: {e}")
+        print(f"❌ Store error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/retrieve/{file_id}")
 async def retrieve_file(file_id: int):
     """Получаем зашифрованный файл по ID"""
     try:
-        conn = await get_db_connection()
+        conn = await get_db()
         
         row = await conn.fetchrow('''
             SELECT id, ciphertext, snapshot, mode, bits, created_at
@@ -148,7 +169,83 @@ async def retrieve_file(file_id: int):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Ошибка получения файла: {e}")
+        print(f"❌ Retrieve error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/files/{user_id}")
+async def list_files(user_id: str):
+    """Список всех файлов пользователя (заглушка)"""
+    try:
+        conn = await get_db()
+        
+        rows = await conn.fetch('''
+            SELECT id, mode, bits, created_at
+            FROM files
+            ORDER BY created_at DESC
+            LIMIT 100
+        ''')
+        
+        await conn.close()
+        
+        files = [
+            {
+                "id": row["id"],
+                "mode": row["mode"],
+                "bits": row["bits"],
+                "created_at": row["created_at"].isoformat()
+            }
+            for row in rows
+        ]
+        
+        return {"files": files}
+    
+    except Exception as e:
+        print(f"❌ List files error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/v1/sensor")
+async def receive_sensor_data(request: SensorData):
+    """Получаем данные с датчиков (аквариум, авто)"""
+    try:
+        conn = await get_db()
+        
+        await conn.execute('''
+            INSERT INTO sensor_data (source, timestamp, data)
+            VALUES ($1, $2, $3)
+        ''', request.source, request.timestamp, json.dumps(request.data))
+        
+        await conn.close()
+        
+        print(f"📡 Sensor data from {request.source}: {request.data}")
+        return {"status": "ok", "timestamp": request.timestamp}
+    
+    except Exception as e:
+        print(f"❌ Sensor error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/v1/sensor/{source}")
+async def get_latest_sensor(source: str):
+    """Получаем последние данные с датчика"""
+    try:
+        conn = await get_db()
+        
+        row = await conn.fetchrow('''
+            SELECT data, timestamp
+            FROM sensor_data
+            WHERE source = %s
+            ORDER BY timestamp DESC
+            LIMIT 1
+        ''', source)
+        
+        await conn.close()
+        
+        if row:
+            return {"data": row["data"], "timestamp": row["timestamp"]}
+        else:
+            return {"error": "No data found"}, 404
+    
+    except Exception as e:
+        print(f"❌ Get sensor error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # ===== ЗАПУСК =====
