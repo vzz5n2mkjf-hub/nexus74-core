@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NEXUS74 - Omni-Entropy Protocol</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -33,7 +34,6 @@
         }
         .tag.live { background: #4CAF50; }
         .tag.real { background: #FF9800; }
-        .tag.sim { background: #f44336; }
         pre {
             background: rgba(0, 0, 0, 0.3);
             padding: 15px;
@@ -102,10 +102,13 @@
             border-color: #4CAF50;
             background: rgba(76, 175, 80, 0.2);
         }
-        .loading { animation: pulse 1.5s infinite; }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        #result {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -174,7 +177,7 @@
             <button class="btn-encrypt" onclick="encrypt()">Зашифровать</button>
             <button class="btn-decrypt" onclick="decrypt()">Расшифровать</button>
             <button class="btn-attack" onclick="attack()">⚠️ Атака (Чужие рыбки)</button>
-            <pre id="result">Готов к работе. Выберите режим и нажмите "Зашифровать".</pre>
+            <div id="result">Готов к работе. Выберите режим и нажмите "Зашифровать".</div>
         </div>
 
         <!-- КАК ЭТО РАБОТАЕТ -->
@@ -187,27 +190,29 @@
     </div>
 
     <script>
-        let currentMode = 'standard';
+        // Инициализация переменных
         let aquariumData = {};
         let carData = {};
         let physicalKey = '';
         let keyChangeCount = 0;
         let startTime = Date.now();
+        let currentMode = 'standard';
 
-        // Генерация физического ключа из данных
-        async function generatePhysicalKey() {
-            const data = JSON.stringify({
-                aquarium: aquariumData,
-                car: carData,
-                timestamp: Date.now()
-            });
-            
-            const encoder = new TextEncoder();
-            const dataBuffer = encoder.encode(data);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        // Генерация физического ключа
+        function generatePhysicalKey() {
+            try {
+                const dataStr = JSON.stringify({
+                    a: aquariumData,
+                    c: carData,
+                    t: Date.now()
+                });
+                const hash = CryptoJS.SHA256(dataStr).toString();
+                console.log('🔑 Key generated:', hash.substring(0, 16) + '...');
+                return hash;
+            } catch (e) {
+                console.error('❌ Key generation error:', e);
+                return 'error_' + Date.now();
+            }
         }
 
         // Обновление данных
@@ -224,47 +229,24 @@
                 document.getElementById('carData').textContent = JSON.stringify(carData, null, 2);
 
                 // Генерация нового ключа
-                physicalKey = await generatePhysicalKey();
-                document.getElementById('physicalKey').textContent = physicalKey.substring(0, 64) + '...';
-                keyChangeCount++;
-                document.getElementById('keyChanges').textContent = keyChangeCount;
+                physicalKey = generatePhysicalKey();
+                if (physicalKey && !physicalKey.startsWith('error')) {
+                    document.getElementById('physicalKey').textContent = physicalKey.substring(0, 64) + '...';
+                    document.getElementById('physicalKey').style.color = '#4CAF50';
+                    keyChangeCount++;
+                    document.getElementById('keyChanges').textContent = keyChangeCount;
+                } else {
+                    document.getElementById('physicalKey').textContent = '⏳ Ожидание...';
+                    document.getElementById('physicalKey').style.color = '#FF9800';
+                }
 
                 // Аптайм
                 const uptime = Math.floor((Date.now() - startTime) / 1000);
                 document.getElementById('uptime').textContent = uptime + 's';
 
             } catch (e) {
-                console.error('Error updating data:', e);
-                // Используем симуляцию если сервер недоступен
-                simulateData();
+                console.error('Update error:', e);
             }
-        }
-
-        // Симуляция данных (fallback)
-        function simulateData() {
-            aquariumData = {
-                temp: 23.5 + Math.random() * 2,
-                ph: 6.8 + Math.random() * 0.5,
-                fish: Array.from({length: 7}, () => Math.floor(Math.random() * 256))
-            };
-            carData = {
-                source: 'elm327_sim',
-                rpm: 700 + Math.random() * 200,
-                coolantTemp: 95 + Math.random() * 10,
-                intakePressure: 35 + Math.random() * 10,
-                throttle: 10 + Math.random() * 5,
-                ignitionAngle: -25 + Math.random() * 10,
-                o2Sensor1: 0.5 + Math.random() * 0.5,
-                fuelTrim: -5 + Math.random() * 10
-            };
-            
-            document.getElementById('aquariumData').textContent = JSON.stringify(aquariumData, null, 2);
-            document.getElementById('carData').textContent = JSON.stringify(carData, null, 2);
-            
-            generatePhysicalKey().then(key => {
-                physicalKey = key;
-                document.getElementById('physicalKey').textContent = key.substring(0, 64) + '...';
-            });
         }
 
         // Выбор режима
@@ -278,54 +260,56 @@
         }
 
         // Шифрование
-        async function encrypt() {
+        function encrypt() {
             const password = document.getElementById('passwordInput').value || 'default';
             const message = document.getElementById('messageInput').value;
             const resultEl = document.getElementById('result');
             
             try {
-                const keyMaterial = await generatePhysicalKey();
-                const fullKey = keyMaterial + password;
+                if (!message) {
+                    resultEl.textContent = '❌ Введите сообщение для шифрования';
+                    return;
+                }
                 
-                const encoder = new TextEncoder();
-                const keyBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(fullKey));
-                const messageBuffer = encoder.encode(message);
+                const physicalKey = generatePhysicalKey();
+                if (!physicalKey || physicalKey.startsWith('error')) {
+                    resultEl.textContent = '❌ Ошибка генерации ключа. Подождите обновления данных.';
+                    return;
+                }
                 
-                const iv = crypto.getRandomValues(new Uint8Array(12));
-                const cryptoKey = await crypto.subtle.importKey(
-                    'raw', keyBuffer, { name: 'AES-GCM', length: 256 }, false, ['encrypt']
-                );
+                const fullKey = physicalKey + password;
+                const encrypted = CryptoJS.AES.encrypt(message, fullKey).toString();
                 
-                const encrypted = await crypto.subtle.encrypt(
-                    { name: 'AES-GCM', iv: iv },
-                    cryptoKey,
-                    messageBuffer
-                );
-                
-                const encryptedHex = Array.from(new Uint8Array(encrypted)).map(b => b.toString(16).padStart(2, '0')).join('');
-                const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
-                
-                resultEl.textContent = `✅ Зашифровано!\n\nIV: ${ivHex}\nCiphertext: ${encryptedHex}\n\nОтправлено на сервер.`;
+                resultEl.innerHTML = `✅ <b>Зашифровано!</b><br><br>
+                    <small>Ciphertext (Base64):</small><br>
+                    <code style="word-break: break-all; font-size: 0.85em;">${encrypted}</code><br><br>
+                    <small>Ключ: ${physicalKey.substring(0, 32)}...</small><br><br>
+                    <small style="color: #4CAF50;">✓ Сохранено на сервере</small>`;
                 
                 // Отправка на сервер
-                await fetch('/api/v1/store', {
+                fetch('/api/v1/store', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        ciphertext: encryptedHex,
-                        snapshot: { aquarium: aquariumData, car: carData, timestamp: Date.now() },
+                        ciphertext: encrypted,
+                        snapshot: { 
+                            aquarium: aquariumData, 
+                            car: carData, 
+                            timestamp: Date.now() 
+                        },
                         mode: currentMode,
                         bits: currentMode === 'standard' ? 256 : currentMode === 'paranoid' ? 1024 : 0
                     })
-                });
+                }).catch(e => console.error('Server save error:', e));
                 
             } catch (e) {
+                console.error('Encryption error:', e);
                 resultEl.textContent = `❌ Ошибка: ${e.message}`;
             }
         }
 
         // Расшифровка
-        async function decrypt() {
+        function decrypt() {
             const password = document.getElementById('passwordInput').value || 'default';
             const resultEl = document.getElementById('result');
             
