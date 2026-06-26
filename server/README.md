@@ -1,12 +1,14 @@
-# ️ NEXUS74 Server
+# 🔐 NEXUS74
 
-Backend API для протокола физически-привязанной криптографии NEXUS74.
+Протокол Омни-энтропии. Шифрование привязано к физическим источникам энтропии.
 
 ## 🚀 Быстрый старт
 
-### 1. Установка зависимостей
+### Backend
 
 
 ```bash
+cd /opt/nexus74
 pip install -r requirements.txt
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
 
