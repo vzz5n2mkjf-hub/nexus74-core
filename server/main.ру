@@ -1,59 +1,158 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import psycopg2
-import uuid
+import asyncpg
+import json
+from datetime import datetime
+import os
 
-app = FastAPI(title="NEXUS74 API")
-
+# ===== КОНФИГУРАЦИЯ =====
 DB_CONFIG = {
-    "dbname": "nexus74",
-    "user": "nexus74",
-    "password": "nexus74_secret",
-    "host": "localhost"
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "port": os.environ.get("DB_PORT", "5432"),
+    "database": os.environ.get("DB_NAME", "nexus74"),
+    "user": os.environ.get("DB_USER", "nexus74"),
+    "password": os.environ.get("DB_PASSWORD", "nexus74"),
 }
 
-def get_db():
-    return psycopg2.connect(**DB_CONFIG)
+# ===== FASTAPI ПРИЛОЖЕНИЕ =====
+app = FastAPI(title="NEXUS74 API", version="1.0.0")
 
-conn = get_db()
-conn.execute("""
-    CREATE TABLE IF NOT EXISTS files (
-        id TEXT PRIMARY KEY,
-        ciphertext TEXT NOT NULL,
-        snapshot TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
-    )
-""")
-conn.commit()
-conn.close()
+# CORS для GitHub Pages
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # В продакшене замени на конкретные домены
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+# ===== PYDANTIC МОДЕЛИ =====
 class StoreRequest(BaseModel):
     ciphertext: str
-    snapshot: str
+    snapshot: dict
+    mode: str
+    bits: int
+
+class RetrieveResponse(BaseModel):
+    id: int
+    ciphertext: str
+    snapshot: dict
+    mode: str
+    bits: int
+    created_at: datetime
+
+# ===== ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ =====
+async def get_db_connection():
+    """Получаем подключение к PostgreSQL"""
+    try:
+        conn = await asyncpg.connect(**DB_CONFIG)
+        return conn
+    except Exception as e:
+        print(f"❌ Ошибка подключения к БД: {e}")
+        raise HTTPException(status_code=500, detail="Database connection failed")
+
+# ===== ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ =====
+@app.on_event("startup")
+async def init_db():
+    """Создаём таблицу files при старте сервера"""
+    try:
+        conn = await get_db_connection()
+        await conn.execute('''
+            CREATE TABLE IF NOT EXISTS files (
+                id SERIAL PRIMARY KEY,
+                ciphertext TEXT NOT NULL,
+                snapshot JSONB NOT NULL,
+                mode VARCHAR(20) NOT NULL,
+                bits INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        await conn.close()
+        print("✅ База данных инициализирована")
+    except Exception as e:
+        print(f"❌ Ошибка инициализации БД: {e}")
+
+# ===== ЭНДПОИНТЫ =====
 
 @app.get("/api/v1/health")
-def health():
-    return {"status": "ok"}
+async def health_check():
+    """Проверка работоспособности сервера"""
+    try:
+        conn = await get_db_connection()
+        result = await conn.fetchval("SELECT COUNT(*) FROM files")
+        await conn.close()
+        
+        return {
+            "status": "ok",
+            "database": "connected",
+            "total_files": result,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "ok",
+            "database": "disconnected",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
 @app.post("/api/v1/store")
-def store(req: StoreRequest):
-    file_id = str(uuid.uuid4())[:8]
-    conn = get_db()
-    conn.execute(
-        "INSERT INTO files (id, ciphertext, snapshot) VALUES (%s, %s, %s)",
-        (file_id, req.ciphertext, req.snapshot)
-    )
-    conn.commit()
-    conn.close()
-    return {"id": file_id}
+async def store_file(request: StoreRequest):
+    """Сохраняем зашифрованный файл"""
+    try:
+        conn = await get_db_connection()
+        
+        # Вставляем файл в базу
+        file_id = await conn.fetchval('''
+            INSERT INTO files (ciphertext, snapshot, mode, bits)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
+        ''', request.ciphertext, json.dumps(request.snapshot), request.mode, request.bits)
+        
+        await conn.close()
+        
+        print(f"📁 Файл сохранён: ID={file_id}, mode={request.mode}, bits={request.bits}")
+        return {"status": "ok", "file_id": file_id}
+    
+    except Exception as e:
+        print(f"❌ Ошибка сохранения файла: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/v1/retrieve/{file_id}")
-def retrieve(file_id: str):
-    conn = get_db()
-    cur = conn.cursor()
-    cur.execute("SELECT ciphertext, snapshot FROM files WHERE id = %s", (file_id,))
-    row = cur.fetchone()
-    conn.close()
-    if not row:
-        raise HTTPException(status_code=404, detail="Not found")
-    return {"ciphertext": row[0], "snapshot": row[1]}
+async def retrieve_file(file_id: int):
+    """Получаем зашифрованный файл по ID"""
+    try:
+        conn = await get_db_connection()
+        
+        row = await conn.fetchrow('''
+            SELECT id, ciphertext, snapshot, mode, bits, created_at
+            FROM files
+            WHERE id = $1
+        ''', file_id)
+        
+        await conn.close()
+        
+        if not row:
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        return {
+            "id": row["id"],
+            "ciphertext": row["ciphertext"],
+            "snapshot": row["snapshot"],
+            "mode": row["mode"],
+            "bits": row["bits"],
+            "created_at": row["created_at"].isoformat()
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Ошибка получения файла: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ===== ЗАПУСК =====
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
