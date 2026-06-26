@@ -204,13 +204,6 @@
     </div>
 
     <script>
-        // ============================================================
-        // NEXUS74 v2 — Omni-Entropy Protocol
-        // Константа 666 — невидимое число, часть ритуала
-        // Формула: MasterKey = SHA256( P(t) + Password + CodeSalt + GenesisSnippet )
-        // CodeSalt = P(t).firstHalf + SHA256( P(t).secondHalf × 666 )
-        // ============================================================
-
         const THE_NUMBER = 666;
         const GENESIS_SNIPPET = "def nexus74_verify():\n    if entropy.is_alive() and world.state == chaos:\n        return True\n    raise NexusError('Foreign fish detected')";
 
@@ -306,18 +299,11 @@
                 }
 
                 const { key, codeSalt } = generateMasterKey(password, physKey);
-                const keyWordArray = CryptoJS.enc.Hex.parse(key);
-                const iv = CryptoJS.lib.WordArray.random(12);
-                const encrypted = CryptoJS.AES.encrypt(message, keyWordArray, {
-                    iv: iv,
-                    mode: CryptoJS.mode.GCM,
-                    padding: CryptoJS.pad.NoPadding
-                });
-                const ciphertext = CryptoJS.enc.Base64.stringify(iv.concat(encrypted.ciphertext));
+                const encrypted = CryptoJS.AES.encrypt(message, key).toString();
 
                 resultEl.innerHTML = '✅ <b>Зашифровано!</b><br><br>' +
                     '<small>Ciphertext (Base64):</small><br>' +
-                    '<code style="word-break: break-all; font-size: 0.85em;">' + ciphertext + '</code><br><br>' +
+                    '<code style="word-break: break-all; font-size: 0.85em;">' + encrypted + '</code><br><br>' +
                     '<small>Ключ (сохрани для расшифровки!):</small><br>' +
                     '<code style="word-break: break-all; font-size: 0.85em; color: #FFD700;">' + key + '</code><br><br>' +
                     '<small style="color: #4CAF50;">✓ CodeSalt активирован (×' + THE_NUMBER + ')</small><br><br>' +
@@ -327,7 +313,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        ciphertext: ciphertext,
+                        ciphertext: encrypted,
                         snapshot: { fingerprint: physKey, aquarium: aquariumData, car: carData, timestamp: Date.now() },
                         mode: currentMode,
                         bits: currentMode === 'standard' ? 256 : currentMode === 'paranoid' ? 1024 : 0
@@ -383,15 +369,7 @@
 
                 const physKey = savedKey || generatePhysicalKey();
                 const { key } = generateMasterKey(password, physKey);
-                const keyWordArray = CryptoJS.enc.Hex.parse(key);
-                const rawData = CryptoJS.enc.Base64.parse(ciphertext);
-                const iv = CryptoJS.lib.WordArray.create(rawData.words.slice(0, 3), 12);
-                const ct = CryptoJS.lib.WordArray.create(rawData.words.slice(3), rawData.sigBytes - 12);
-                const decrypted = CryptoJS.AES.decrypt({ ciphertext: ct }, keyWordArray, {
-                    iv: iv,
-                    mode: CryptoJS.mode.GCM,
-                    padding: CryptoJS.pad.NoPadding
-                });
+                const decrypted = CryptoJS.AES.decrypt(ciphertext, key);
                 const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
 
                 if (plaintext) {
@@ -406,7 +384,6 @@
                         '• Данные изменились (ключ другой)<br>' +
                         '• Неверный пароль<br>' +
                         '• Неверный сохранённый ключ<br><br>' +
-                        '<small>Текущий P(t): ' + generatePhysicalKey().substring(0, 32) + '...</small><br><br>' +
                         '<small style="color: #FF9800;">💡 Совет: Сохраняйте ключ при шифровании!</small>';
                 }
             } catch (e) {
