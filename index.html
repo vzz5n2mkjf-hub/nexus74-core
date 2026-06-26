@@ -131,22 +131,19 @@
 </head>
 <body>
     <div class="container">
-        <h1> NEXUS74</h1>
+        <h1>NEXUS74</h1>
         <p class="subtitle">Протокол Омни-энтропии. Шифрование привязано к состоянию аквариума и реальным данным авто (ELM327).</p>
 
-        <!-- АКВАРИУМ -->
         <div class="card">
             <h3>🐠 Аквариум (Микро) <span class="tag live">LIVE</span></h3>
             <pre id="aquariumData">загрузка...</pre>
         </div>
 
-        <!-- АВТОМОБИЛЬ -->
         <div class="card">
             <h3>🚗 Автомобиль (ELM327) <span class="tag real">REAL</span></h3>
             <pre id="carData">загрузка...</pre>
         </div>
 
-        <!-- ФИЗИЧЕСКИЙ ОТПЕЧАТОК -->
         <div class="card">
             <h3>🔑 Физический отпечаток P(t)</h3>
             <div class="key-display" id="physicalKey">_</div>
@@ -167,7 +164,6 @@
             </div>
         </div>
 
-        <!-- РЕЖИМ ШИФРОВАНИЯ -->
         <div class="card">
             <h3>️ Режим шифрования</h3>
             <div class="mode-selector">
@@ -186,7 +182,6 @@
             </div>
         </div>
 
-        <!-- ТЕСТ ШИФРОВАНИЯ -->
         <div class="card">
             <h3>✏️ Тест шифрования</h3>
             <input type="password" id="passwordInput" placeholder="Пароль (участвует в ключе)">
@@ -199,17 +194,26 @@
             <div id="result">Готов к работе. Выберите режим и нажмите "Зашифровать".</div>
         </div>
 
-        <!-- КАК ЭТО РАБОТАЕТ -->
         <div class="card">
             <h3> Как это работает?</h3>
-            <p><strong>🟢 Стандарт (256 бит):</strong> AES-256-GCM. Ключ = SHA-256(Аквариум + Авто + Пароль). Невзламываемо.</p>
-            <p><strong>🟡 Параноик (1024 бита):</strong> 4 слоя AES-256. Каждый слой использует свой срез энтропии.</p>
-            <p><strong>🔴 Абсолют (OTP):</strong> Одноразовый блокнот. Длина ключа = длине сообщения. Идеальная криптография (Шеннон, 1949).</p>
+            <p><strong>P(t) = SHA-256(Аквариум + Авто + Время)</strong> — физический отпечаток</p>
+            <p><strong>CodeSalt = firstHalf(P) + SHA-256(secondHalf(P) × 666)</strong> — кодовая соль</p>
+            <p><strong>MasterKey = SHA-256(P + Пароль + CodeSalt + GenesisSnippet)</strong> — финальный ключ</p>
+            <p style="color: #f44336; margin-top: 10px;">⚠️ 666 — невидимая константа. Не меняется между режимами.</p>
         </div>
     </div>
 
     <script>
-        // Инициализация переменных
+        // ============================================================
+        // NEXUS74 v2 — Omni-Entropy Protocol
+        // Константа 666 — невидимое число, часть ритуала
+        // Формула: MasterKey = SHA256( P(t) + Password + CodeSalt + GenesisSnippet )
+        // CodeSalt = P(t).firstHalf + SHA256( P(t).secondHalf × 666 )
+        // ============================================================
+
+        const THE_NUMBER = 666;
+        const GENESIS_SNIPPET = "def nexus74_verify():\n    if entropy.is_alive() and world.state == chaos:\n        return True\n    raise NexusError('Foreign fish detected')";
+
         let aquariumData = {};
         let carData = {};
         let physicalKey = '';
@@ -218,24 +222,36 @@
         let currentMode = 'standard';
         let isDecryptMode = false;
 
-        // Генерация физического ключа
         function generatePhysicalKey() {
             try {
-                const dataStr = JSON.stringify({
-                    a: aquariumData,
-                    c: carData,
-                    t: Date.now()
-                });
+                const dataStr = JSON.stringify({ a: aquariumData, c: carData, t: Date.now() });
                 const hash = CryptoJS.SHA256(dataStr).toString();
-                console.log('🔑 Key generated:', hash.substring(0, 16) + '...');
+                console.log('P(t):', hash.substring(0, 16) + '...');
                 return hash;
             } catch (e) {
-                console.error('❌ Key generation error:', e);
+                console.error('P(t) error:', e);
                 return 'error_' + Date.now();
             }
         }
 
-        // Обновление данных с сервера
+        function generateCodeSalt(physicalFingerprint) {
+            const firstHalf  = physicalFingerprint.substring(0, 32);
+            const secondHalf = physicalFingerprint.substring(32, 64);
+            const multiplied = secondHalf.repeat(THE_NUMBER);
+            const secondHashed = CryptoJS.SHA256(multiplied).toString();
+            const codeSalt = firstHalf + secondHashed;
+            console.log('CodeSalt:', codeSalt.substring(0, 16) + '...');
+            return codeSalt;
+        }
+
+        function generateMasterKey(password, physicalFingerprint) {
+            const codeSalt = generateCodeSalt(physicalFingerprint);
+            const material = physicalFingerprint + password + codeSalt + GENESIS_SNIPPET;
+            const masterKey = CryptoJS.SHA256(material).toString();
+            console.log('MasterKey:', masterKey.substring(0, 16) + '...');
+            return { key: masterKey, fingerprint: physicalFingerprint, codeSalt: codeSalt };
+        }
+
         async function updateData() {
             try {
                 const aquariumResp = await fetch('/api/v1/sensor/aquarium');
@@ -253,79 +269,77 @@
                     keyChangeCount++;
                     document.getElementById('keyChanges').textContent = keyChangeCount;
                 } else {
-                    document.getElementById('physicalKey').textContent = '⏳ Ожидание...';
+                    document.getElementById('physicalKey').textContent = 'Ожидание...';
                     document.getElementById('physicalKey').style.color = '#FF9800';
                 }
 
                 const uptime = Math.floor((Date.now() - startTime) / 1000);
                 document.getElementById('uptime').textContent = uptime + 's';
-
             } catch (e) {
                 console.error('Update error:', e);
             }
         }
 
-        // Выбор режима шифрования
         function selectMode(mode, element) {
             currentMode = mode;
             document.querySelectorAll('.mode-option').forEach(el => el.classList.remove('active'));
             if (element) element.classList.add('active');
-            
             const bitLengths = { standard: 256, paranoid: 1024, absolute: '∞' };
             document.getElementById('bitLength').textContent = bitLengths[mode];
         }
 
-        // Шифрование
         function encrypt() {
             const password = document.getElementById('passwordInput').value || 'default';
             const message = document.getElementById('messageInput').value;
             const resultEl = document.getElementById('result');
-            
+
             try {
                 if (!message) {
                     resultEl.textContent = '⚠️ Введите сообщение для шифрования';
                     return;
                 }
-                
+
                 const physKey = generatePhysicalKey();
                 if (!physKey || physKey.startsWith('error')) {
-                    resultEl.textContent = '❌ Ошибка генерации ключа. Подождите обновления данных.';
+                    resultEl.textContent = '❌ Ошибка генерации P(t). Подождите обновления данных.';
                     return;
                 }
-                
-                const fullKey = physKey + password;
-                const encrypted = CryptoJS.AES.encrypt(message, fullKey).toString();
-                
-                resultEl.innerHTML = `✅ <b>Зашифровано!</b><br><br>
-                    <small>Ciphertext (Base64):</small><br>
-                    <code style="word-break: break-all; font-size: 0.85em;">${encrypted}</code><br><br>
-                    <small>Ключ (сохрани для расшифровки!):</small><br>
-                    <code style="word-break: break-all; font-size: 0.85em; color: #FFD700;">${physKey}</code><br><br>
-                    <small style="color: #4CAF50;">✓ Сохранено на сервере</small><br><br>
-                    <small style="color: #FF9800;">⚠️ Для расшифровки нужен этот же ключ + пароль!</small>`;
-                
+
+                const { key, codeSalt } = generateMasterKey(password, physKey);
+                const keyWordArray = CryptoJS.enc.Hex.parse(key);
+                const iv = CryptoJS.lib.WordArray.random(12);
+                const encrypted = CryptoJS.AES.encrypt(message, keyWordArray, {
+                    iv: iv,
+                    mode: CryptoJS.mode.GCM,
+                    padding: CryptoJS.pad.NoPadding
+                });
+                const ciphertext = CryptoJS.enc.Base64.stringify(iv.concat(encrypted.ciphertext));
+
+                resultEl.innerHTML = '✅ <b>Зашифровано!</b><br><br>' +
+                    '<small>Ciphertext (Base64):</small><br>' +
+                    '<code style="word-break: break-all; font-size: 0.85em;">' + ciphertext + '</code><br><br>' +
+                    '<small>Ключ (сохрани для расшифровки!):</small><br>' +
+                    '<code style="word-break: break-all; font-size: 0.85em; color: #FFD700;">' + key + '</code><br><br>' +
+                    '<small style="color: #4CAF50;">✓ CodeSalt активирован (×' + THE_NUMBER + ')</small><br><br>' +
+                    '<small style="color: #FF9800;">⚠️ Для расшифровки нужен этот же ключ + пароль!</small>';
+
                 fetch('/api/v1/store', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        ciphertext: encrypted,
-                        snapshot: { 
-                            aquarium: aquariumData, 
-                            car: carData, 
-                            timestamp: Date.now() 
-                        },
+                        ciphertext: ciphertext,
+                        snapshot: { fingerprint: physKey, aquarium: aquariumData, car: carData, timestamp: Date.now() },
                         mode: currentMode,
                         bits: currentMode === 'standard' ? 256 : currentMode === 'paranoid' ? 1024 : 0
                     })
                 }).catch(e => console.error('Server save error:', e));
-                
+
             } catch (e) {
                 console.error('Encryption error:', e);
-                resultEl.textContent = ` Ошибка: ${e.message}`;
+                resultEl.textContent = '❌ Ошибка: ' + e.message;
             }
         }
 
-        // Переключение в режим расшифровки
         function toggleDecryptMode() {
             const msgInput = document.getElementById('messageInput');
             const cipherInput = document.getElementById('ciphertextInput');
@@ -333,11 +347,10 @@
             const encryptBtn = document.getElementById('encryptBtn');
             const decryptBtn = document.getElementById('decryptBtn');
             const resultEl = document.getElementById('result');
-            
+
             isDecryptMode = !isDecryptMode;
-            
+
             if (isDecryptMode) {
-                // Режим расшифровки
                 msgInput.classList.add('hidden');
                 cipherInput.classList.remove('hidden');
                 savedKeyInput.classList.remove('hidden');
@@ -346,7 +359,6 @@
                 decryptBtn.className = 'btn-encrypt';
                 resultEl.innerHTML = '🔓 <b>Режим расшифровки</b><br><br>1. Вставьте зашифрованные данные (Base64)<br>2. Введите тот же пароль<br>3. (Опционально) Вставьте сохранённый ключ<br>4. Нажмите "Выполнить расшифровку"<br><br>⚠️ <b>Важно:</b> Если ключ не совпадает с моментом шифрования — расшифровка не сработает!';
             } else {
-                // Режим шифрования
                 msgInput.classList.remove('hidden');
                 cipherInput.classList.add('hidden');
                 savedKeyInput.classList.add('hidden');
@@ -357,56 +369,59 @@
             }
         }
 
-        // Выполнение расшифровки
         function doDecrypt() {
             const password = document.getElementById('passwordInput').value || 'default';
             const ciphertext = document.getElementById('ciphertextInput').value.trim();
             const savedKey = document.getElementById('savedKeyInput').value.trim();
             const resultEl = document.getElementById('result');
-            
+
             try {
                 if (!ciphertext) {
                     resultEl.textContent = '❌ Введите зашифрованные данные';
                     return;
                 }
-                
-                // Используем сохранённый ключ если есть, иначе генерируем новый
+
                 const physKey = savedKey || generatePhysicalKey();
-                const fullKey = physKey + password;
-                
-                const decrypted = CryptoJS.AES.decrypt(ciphertext, fullKey);
+                const { key } = generateMasterKey(password, physKey);
+                const keyWordArray = CryptoJS.enc.Hex.parse(key);
+                const rawData = CryptoJS.enc.Base64.parse(ciphertext);
+                const iv = CryptoJS.lib.WordArray.create(rawData.words.slice(0, 3), 12);
+                const ct = CryptoJS.lib.WordArray.create(rawData.words.slice(3), rawData.sigBytes - 12);
+                const decrypted = CryptoJS.AES.decrypt({ ciphertext: ct }, keyWordArray, {
+                    iv: iv,
+                    mode: CryptoJS.mode.GCM,
+                    padding: CryptoJS.pad.NoPadding
+                });
                 const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
-                
+
                 if (plaintext) {
-                    resultEl.innerHTML = `✅ <b>Расшифровано!</b><br><br>
-                        <small>Сообщение:</small><br>
-                        <code style="font-size: 1.2em; color: #4CAF50;">${plaintext}</code><br><br>
-                        <small style="color: #2196F3;">✓ Ключ совпал!</small><br><br>
-                        <small>Использован ключ: ${physKey.substring(0, 32)}...</small>`;
+                    resultEl.innerHTML = '✅ <b>Расшифровано!</b><br><br>' +
+                        '<small>Сообщение:</small><br>' +
+                        '<code style="font-size: 1.2em; color: #4CAF50;">' + plaintext + '</code><br><br>' +
+                        '<small style="color: #2196F3;">✓ Ключ совпал! (×' + THE_NUMBER + ')</small><br><br>' +
+                        '<small>Использован ключ: ' + key.substring(0, 32) + '...</small>';
                 } else {
-                    resultEl.innerHTML = `❌ <b>Не удалось расшифровать!</b><br><br>
-                        <small>Причины:</small><br>
-                        • Данные изменились (ключ другой)<br>
-                        • Неверный пароль<br>
-                        • Неверный сохранённый ключ<br><br>
-                        <small>Текущий ключ: ${generatePhysicalKey().substring(0, 32)}...</small><br><br>
-                        <small style="color: #FF9800;">💡 Совет: Сохраняйте ключ при шифровании!</small>`;
+                    resultEl.innerHTML = '❌ <b>Не удалось расшифровать!</b><br><br>' +
+                        '<small>Причины:</small><br>' +
+                        '• Данные изменились (ключ другой)<br>' +
+                        '• Неверный пароль<br>' +
+                        '• Неверный сохранённый ключ<br><br>' +
+                        '<small>Текущий P(t): ' + generatePhysicalKey().substring(0, 32) + '...</small><br><br>' +
+                        '<small style="color: #FF9800;">💡 Совет: Сохраняйте ключ при шифровании!</small>';
                 }
-                
             } catch (e) {
-                resultEl.textContent = `❌ Ошибка: ${e.message}`;
+                resultEl.textContent = '❌ Ошибка: ' + e.message;
             }
         }
 
-        // Атака
         function attack() {
             const resultEl = document.getElementById('result');
             resultEl.innerHTML = '⚠️ <b>ЗАЩИТА СРАБОТАЛА!</b><br><br>' +
-                'Мир изменился (другие рыбки, другие обороты двигателя) → ключ не совпал → доступ запрещён.';
+                'Мир изменился (другие рыбки, другие обороты двигателя) → P(t) другой → CodeSalt другой → ключ не совпал → доступ запрещён.<br><br>' +
+                '<small style="color: #f44336;">Число ' + THE_NUMBER + ' сделало своё дело.</small>';
             resultEl.style.color = '#f44336';
         }
 
-        // Назначаем обработчики кнопок
         document.getElementById('encryptBtn').addEventListener('click', encrypt);
         document.getElementById('decryptBtn').addEventListener('click', function() {
             if (isDecryptMode) {
@@ -416,10 +431,8 @@
             }
         });
 
-        // Запуск
         setInterval(updateData, 1000);
         updateData();
     </script>
 </body>
 </html>
-
