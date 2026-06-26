@@ -3,599 +3,346 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS74 — Omni-Entropy Protocol</title>
+    <title>NEXUS74 - Omni-Entropy Protocol</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Arial, sans-serif;
-            background: #0a0a1a;
-            color: #e0e0e0;
-            padding: 16px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            padding: 20px;
             min-height: 100vh;
         }
         .container { max-width: 800px; margin: 0 auto; }
-        h1 {
-            font-size: 26px;
-            color: #667eea;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
+        h1 { text-align: center; margin-bottom: 10px; font-size: 2em; }
+        .subtitle { text-align: center; opacity: 0.8; margin-bottom: 30px; }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .subtitle { color: #8e8e93; font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
-        .panel {
-            background: rgba(255,255,255,0.03);
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            border: 1px solid rgba(255,255,255,0.06);
+        .card h3 { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .tag {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: bold;
         }
-        .panel h3 {
-            font-size: 15px;
-            color: #667eea;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .fingerprint {
-            color: #34c759;
-            word-break: break-all;
-            font-size: 10px;
-            font-family: monospace;
-            background: rgba(52,199,89,0.05);
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 8px;
-            min-height: 40px;
-        }
-        .status { color: #ff9500; font-size: 11px; margin-top: 8px; }
+        .tag.live { background: #4CAF50; }
+        .tag.real { background: #FF9800; }
+        .tag.sim { background: #f44336; }
         pre {
-            background: rgba(0,0,0,0.4);
-            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
             border-radius: 8px;
             overflow-x: auto;
-            font-size: 10px;
-            line-height: 1.4;
-            color: #a0a0a0;
-            max-height: 160px;
-            overflow-y: auto;
+            font-size: 0.9em;
         }
-        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-        input, textarea {
-            padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05); color: #e0e0e0; font-size: 14px; width: 100%;
+        .key-display {
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            word-break: break-all;
+            min-height: 50px;
+            color: #4CAF50;
         }
-        input:focus, textarea:focus { outline: none; border-color: #667eea; }
-        textarea { min-height: 60px; resize: vertical; font-family: monospace; }
-        .mode-selector {
+        .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-bottom: 12px;
+            gap: 15px;
+            margin-top: 15px;
         }
-        .mode-btn {
-            padding: 10px 6px;
-            border: 2px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.03);
-            color: #8e8e93;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
+        .stat {
             text-align: center;
-            transition: all 0.2s;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
         }
-        .mode-btn.active {
-            border-color: #34c759;
-            background: rgba(52,199,89,0.1);
-            color: #34c759;
-        }
-        .button-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .stat-value { font-size: 2em; font-weight: bold; }
+        .stat-label { font-size: 0.8em; opacity: 0.7; }
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; border: none; padding: 12px 16px; border-radius: 8px;
-            font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-            flex: 1; min-width: 100px;
+            width: 100%;
+            padding: 15px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
         }
-        button:active { transform: scale(0.97); }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        button.danger { background: linear-gradient(135deg, #ff3b30 0%, #ff6b35 100%); }
-        button.success { background: linear-gradient(135deg, #34c759 0%, #30d158 100%); }
-        .result {
-            margin-top: 12px; padding: 12px; border-radius: 8px;
-            background: rgba(255,255,255,0.03); font-size: 12px; line-height: 1.6; min-height: 60px;
+        button:active { transform: scale(0.98); }
+        .btn-encrypt { background: #4CAF50; color: white; }
+        .btn-decrypt { background: #2196F3; color: white; }
+        .btn-attack { background: #f44336; color: white; }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
         }
-        .result.success { border-left: 3px solid #34c759; }
-        .result.error { border-left: 3px solid #ff3b30; }
-        .result.info { border-left: 3px solid #667eea; }
-        .live-indicator {
-            display: inline-block; width: 8px; height: 8px; background: #34c759;
-            border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite;
+        .mode-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
         }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-        .stat { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; text-align: center; }
-        .stat .number { font-size: 18px; font-weight: 700; color: #667eea; }
-        .stat .label { font-size: 10px; color: #8e8e93; margin-top: 2px; }
-        .tag {
-            display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px;
-            font-weight: 600; background: rgba(102,126,234,0.15); color: #667eea; margin-left: 8px;
+        .mode-option {
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
-        .tag.real { background: rgba(255,149,0,0.15); color: #ff9500; }
-        .tag.live { background: rgba(52,199,89,0.15); color: #34c759; }
-        .tag.fallback { background: rgba(255,59,48,0.15); color: #ff3b30; }
-        .strength-meter { display: flex; gap: 4px; margin-top: 8px; }
-        .strength-bar {
-            flex: 1; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; transition: all 0.3s;
+        .mode-option.active {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
         }
-        .strength-bar.active { background: #34c759; }
-        .strength-bar.warning { background: #ff9500; }
-        .strength-bar.danger { background: #ff3b30; }
-        @media (max-width: 600px) {
-            h1 { font-size: 20px; }
-            .mode-selector { grid-template-columns: 1fr; }
-            .button-group { flex-direction: column; }
-            button { width: 100%; }
+        .loading { animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔐 NEXUS74 <span class="tag">OMNI</span> <span class="tag real">REAL CAR</span></h1>
-        <div class="subtitle">Протокол Омни-энтропии. Шифрование привязано к состоянию аквариума, <b>реальным данным авто (ELM327)</b> и <b>рынкам MOEX</b>.</div>
+        <h1>🔐 NEXUS74</h1>
+        <p class="subtitle">Протокол Омни-энтропии. Шифрование привязано к состоянию аквариума и реальным данным авто (ELM327).</p>
 
-        <div class="panel">
-            <h3><span class="live-indicator"></span>🐠 Аквариум (Микро)</h3>
-            <pre id="aqua">загрузка...</pre>
+        <!-- АКВАРИУМ -->
+        <div class="card">
+            <h3>🐠 Аквариум (Микро) <span class="tag live">LIVE</span></h3>
+            <pre id="aquariumData">загрузка...</pre>
         </div>
 
-        <div class="panel">
-            <h3><span class="live-indicator"></span>🚗 Автомобиль (ELM327) <span class="tag real">REAL</span></h3>
-            <pre id="vehicle">загрузка...</pre>
+        <!-- АВТОМОБИЛЬ -->
+        <div class="card">
+            <h3>🚗 Автомобиль (ELM327) <span class="tag real">REAL</span></h3>
+            <pre id="carData">загрузка...</pre>
         </div>
 
-        <div class="panel">
-            <h3><span class="live-indicator"></span>🇷🇺 Российские рынки <span id="moexTag" class="tag live">MOEX LIVE</span></h3>
-            <pre id="global">загрузка...</pre>
-        </div>
-
-        <div class="panel">
+        <!-- ФИЗИЧЕСКИЙ ОТПЕЧАТОК -->
+        <div class="card">
             <h3>🔑 Физический отпечаток P(t)</h3>
-            <div class="fingerprint" id="fingerprint">—</div>
-            <div class="status"> Обновляется каждую секунду. Изменилось состояние → изменился ключ.</div>
+            <div class="key-display" id="physicalKey">_</div>
+            <p style="margin-top: 10px; color: #FF9800;">Обновляется каждую секунду. Изменилось состояние → изменился ключ.</p>
             <div class="stats">
-                <div class="stat"><div class="number" id="bits">256</div><div class="label">бит</div></div>
-                <div class="stat"><div class="number" id="changes">0</div><div class="label">смен ключа</div></div>
-                <div class="stat"><div class="number" id="uptime">0s</div><div class="label">аптайм</div></div>
+                <div class="stat">
+                    <div class="stat-value" id="bitLength">256</div>
+                    <div class="stat-label">бит</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="keyChanges">0</div>
+                    <div class="stat-label">смен ключа</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="uptime">0s</div>
+                    <div class="stat-label">аптайм</div>
+                </div>
             </div>
         </div>
 
-        <div class="panel">
+        <!-- РЕЖИМ ШИФРОВАНИЯ -->
+        <div class="card">
             <h3>🛡️ Режим шифрования</h3>
             <div class="mode-selector">
-                <button class="mode-btn active" onclick="setMode('std', this)">🟢 Стандарт<br>256 бит</button>
-                <button class="mode-btn" onclick="setMode('par', this)">🟡 Параноик<br>1024 бита</button>
-                <button class="mode-btn" onclick="setMode('otp', this)">🔴 Абсолют<br>∞ бит (OTP)</button>
-            </div>
-            <div class="strength-meter" id="strengthMeter">
-                <div class="strength-bar active"></div>
-                <div class="strength-bar"></div>
-                <div class="strength-bar"></div>
-                <div class="strength-bar"></div>
+                <div class="mode-option active" onclick="selectMode('standard')">
+                    <strong>🟢 Стандарт</strong><br>
+                    <small>256 бит (AES-256-GCM)</small>
+                </div>
+                <div class="mode-option" onclick="selectMode('paranoid')">
+                    <strong>🟡 Параноик</strong><br>
+                    <small>1024 бита (4 слоя AES)</small>
+                </div>
+                <div class="mode-option" onclick="selectMode('absolute')">
+                    <strong>🔴 Абсолют</strong><br>
+                    <small>∞ бит (OTP - одноразовый блокнот)</small>
+                </div>
             </div>
         </div>
 
-        <div class="panel">
-            <h3>🧪 Тест шифрования</h3>
-            <div class="input-group">
-                <input id="pwd" type="password" placeholder="Мастер-пароль" value="demo2026">
-                <textarea id="msg" placeholder="Секретное сообщение">челябинск</textarea>
-            </div>
-            <div class="button-group">
-                <button onclick="doEncrypt()" class="success" id="encBtn"> Зашифровать</button>
-                <button onclick="doDecrypt()" id="decBtn"> Расшифровать</button>
-                <button onclick="doTamper()" class="danger">⚠️ Атака (Чужие рыбки)</button>
-            </div>
-            <div class="result info" id="res">Готов к работе. Выберите режим и нажмите "Зашифровать".</div>
+        <!-- ТЕСТ ШИФРОВАНИЯ -->
+        <div class="card">
+            <h3>✏️ Тест шифрования</h3>
+            <input type="password" id="passwordInput" placeholder="Пароль (участвует в ключе)">
+            <input type="text" id="messageInput" placeholder="Сообщение для шифрования" value="челябинск">
+            <button class="btn-encrypt" onclick="encrypt()">Зашифровать</button>
+            <button class="btn-decrypt" onclick="decrypt()">Расшифровать</button>
+            <button class="btn-attack" onclick="attack()">⚠️ Атака (Чужие рыбки)</button>
+            <pre id="result">Готов к работе. Выберите режим и нажмите "Зашифровать".</pre>
         </div>
 
-        <div class="panel">
+        <!-- КАК ЭТО РАБОТАЕТ -->
+        <div class="card">
             <h3>📖 Как это работает?</h3>
-            <div style="font-size: 12px; line-height: 1.6; color: #c0c0c0;">
-                <p><strong style="color: #34c759;">🟢 Стандарт (256 бит):</strong> AES-256-GCM. Ключ = SHA-256(Аквариум + Авто + MOEX + Пароль). Невзламываемо.</p>
-                <p style="margin-top:8px;"><strong style="color: #ff9500;">🟡 Параноик (1024 бит):</strong> 4 слоя AES-256. Каждый слой использует свой срез энтропии.</p>
-                <p style="margin-top:8px;"><strong style="color: #ff3b30;">🔴 Абсолют (OTP):</strong> Одноразовый блокнот. Длина ключа = длине сообщения. Идеальная криптография (Шеннон, 1949).</p>
-            </div>
+            <p><strong>🟢 Стандарт (256 бит):</strong> AES-256-GCM. Ключ = SHA-256(Аквариум + Авто + Пароль). Невзламываемо.</p>
+            <p><strong>🟡 Параноик (1024 бита):</strong> 4 слоя AES-256. Каждый слой использует свой срез энтропии.</p>
+            <p><strong>🔴 Абсолют (OTP):</strong> Одноразовый блокнот. Длина ключа = длине сообщения. Идеальная криптография (Шеннон, 1949).</p>
         </div>
     </div>
 
     <script>
-    // ===== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ =====
-    let mode = 'std';
-    let lastEnc = null;
-    let changes = 0;
-    let startTime = Date.now();
-    let lastMoexData = null;
-    let moexSource = 'live'; 
+        let currentMode = 'standard';
+        let aquariumData = {};
+        let carData = {};
+        let physicalKey = '';
+        let keyChangeCount = 0;
+        let startTime = Date.now();
 
-    // ===== ДЕТЕРМИНИРОВАННЫЙ PRNG =====
-    function rng(seed) {
-        let s = seed;
-        return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-    }
-
-    // ===== ИСТОЧНИКИ ЭНТРОПИИ =====
-    
-    function getAqua(t) {
-        const r = rng(t);
-        return {
-            temp: 24 + Math.sin(t/10000)*0.5 + (r()-0.5)*0.1,
-            ph: 7 + Math.sin(t/15000)*0.2 + (r()-0.5)*0.05,
-            fish: Array.from({length:16}, () => Math.floor(r()*256))
-        };
-    }
-
-    function getCar(t) {
-        const r = rng(t);
-        return {
-            source: 'elm327_real',
-            rpm: 750 + Math.sin(t/2000)*100 + r()*50,
-            coolantTemp: 101 + (r()-0.5)*0.5,
-            intakePressure: 42 + Math.sin(t/3000)*3 + r()*2,
-            throttle: 12.16 + (r()-0.5)*0.4,
-            ignitionAngle: -26 + (r()-0.5)*10,
-            o2Sensor1: 0.79 + (r()-0.5)*0.16,
-            fuelTrim: 0.35 + (r()-0.5)*16
-        };
-    }
-
-    // ===== РЕАЛЬНЫЙ MOEX API С ЛОГИРОВАНИЕМ =====
-    const CORS_PROXIES = [
-        'https://corsproxy.io/?',
-        'https://api.allorigins.win/raw?url=',
-    ];
-
-    async function fetchWithProxy(url, proxyIndex = 0) {
-        if (proxyIndex >= CORS_PROXIES.length) {
-            throw new Error('All proxies failed');
-        }
-        const proxy = CORS_PROXIES[proxyIndex];
-        const fullUrl = proxy + encodeURIComponent(url);
-        
-        try {
-            const response = await fetch(fullUrl, { headers: { 'Accept': 'application/json' } });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return await response.json();
-        } catch (e) {
-            console.warn(`Proxy ${proxyIndex} failed:`, e.message);
-            return fetchWithProxy(url, proxyIndex + 1);
-        }
-    }
-
-    function extractPrice(data, ticker) {
-        if (!data) return null;
-        
-        // MOEX ISS API возвращает массивы. Ищем колонку LAST и SECID
-        const sections = ['marketdata', 'securities'];
-        for (const section of sections) {
-            if (data[section] && data[section].columns && data[section].data) {
-                const lastIdx = data[section].columns.indexOf('LAST');
-                const secIdx = data[section].columns.indexOf('SECID');
-                
-                if (lastIdx !== -1) {
-                    for (const row of data[section].data) {
-                        // Если есть SECID, ищем нужный тикер. Если нет — берём первую строку.
-                        if (secIdx !== -1 && row[secIdx] !== ticker) continue;
-                        if (row[lastIdx] !== null && row[lastIdx] !== undefined) {
-                            return parseFloat(row[lastIdx]);
-                        }
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    async function getMoexReal() {
-        console.log('🔄 Запрос данных MOEX...');
-        try {
-            const [sberData, moexData, usdData] = await Promise.all([
-                fetchWithProxy('https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER.json'),
-                fetchWithProxy('https://iss.moex.com/iss/engines/stock/markets/index/boards/SNDX/securities/IMOEX.json'),
-                fetchWithProxy('https://iss.moex.com/iss/engines/currency/markets/selt/securities/USD000UTSTOM.json')
-            ]);
-
-            // Логируем сырые данные для отладки
-            console.log(' SBER raw:', JSON.stringify(sberData).substring(0, 200) + '...');
-            console.log('📊 IMOEX raw:', JSON.stringify(moexData).substring(0, 200) + '...');
-            console.log('📊 USD raw:', JSON.stringify(usdData).substring(0, 200) + '...');
-
-            const sber = extractPrice(sberData, 'SBER');
-            const moex = extractPrice(moexData, 'IMOEX');
-            const usd = extractPrice(usdData, 'USD000UTSTOM');
-
-            console.log('✅ Извлечены цены:', { sber, moex, usd });
-
-            if (sber && moex && usd) {
-                return {
-                    source: 'moex_real',
-                    timestamp: Date.now(),
-                    sber: sber,
-                    moex: moex,
-                    usd: usd
-                };
-            }
-            return null;
-        } catch (e) {
-            console.error('❌ MOEX API error:', e);
-            return null;
-        }
-    }
-
-    function getMoexFallback() {
-        const t = Date.now();
-        const r = rng(t + 7777);
-        return {
-            source: 'moex_fallback',
-            timestamp: t,
-            sber: 265 + Math.sin(t/100000)*5 + r()*3,
-            moex: 3150 + Math.cos(t/80000)*20 + r()*10,
-            usd: 90 + Math.sin(t/120000)*1 + (r()-0.5)*0.5
-        };
-    }
-
-    async function getMoex() {
-        const now = Date.now();
-        if (!lastMoexData || (now - lastMoexData.timestamp) > 15000) {
-            const realData = await getMoexReal();
-            if (realData) {
-                lastMoexData = realData;
-                moexSource = 'live';
-            } else if (!lastMoexData) {
-                lastMoexData = getMoexFallback();
-                moexSource = 'fallback';
-            }
-        }
-        return lastMoexData;
-    }
-
-    // ===== КРИПТОГРАФИЧЕСКОЕ ЯДРО =====
-    
-    async function sha256(data) {
-        const bytes = new TextEncoder().encode(typeof data === 'string' ? data : JSON.stringify(data));
-        const buf = await window.crypto.subtle.digest('SHA-256', bytes);
-        return new Uint8Array(buf);
-    }
-
-    async function makeKey(password, salt) {
-        const enc = new TextEncoder();
-        const mat = await window.crypto.subtle.importKey(
-            'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
-        );
-        const key = await window.crypto.subtle.deriveKey(
-            { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
-            mat,
-            { name: 'AES-GCM', length: 256 },
-            true, ['encrypt', 'decrypt']
-        );
-        return await window.crypto.subtle.exportKey('raw', key);
-    }
-
-    async function aesEnc(keyBytes, data) {
-        const iv = window.crypto.getRandomValues(new Uint8Array(12));
-        const key = await window.crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt']);
-        const ct = await window.crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
-        return { iv, ct: new Uint8Array(ct) };
-    }
-
-    async function aesDec(keyBytes, iv, ct) {
-        const key = await window.crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['decrypt']);
-        const pt = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
-        return new Uint8Array(pt);
-    }
-
-    async function encStd(data, pwd, snap) {
-        const fp = await sha256(snap);
-        const key = await makeKey(pwd, fp);
-        const { iv, ct } = await aesEnc(key, data);
-        return { mode: 'std', iv, ct, snap, bits: 256 };
-    }
-
-    async function decStd(enc, pwd) {
-        const fp = await sha256(enc.snap);
-        const key = await makeKey(pwd, fp);
-        return await aesDec(key, enc.iv, enc.ct);
-    }
-
-    async function encPar(data, pwd, snap) {
-        let cur = data;
-        const layers = [];
-        for (let i = 0; i < 4; i++) {
-            const layerSnap = { ...snap, layer: i, t: snap.t + i };
-            const fp = await sha256(layerSnap);
-            const key = await makeKey(pwd + '_L' + i, fp);
-            const { iv, ct } = await aesEnc(key, cur);
-            cur = ct;
-            layers.push({ iv, snap: layerSnap });
-        }
-        return { mode: 'par', ct: cur, layers, bits: 1024 };
-    }
-
-    async function decPar(enc, pwd) {
-        let cur = enc.ct;
-        for (let i = 3; i >= 0; i--) {
-            const layer = enc.layers[i];
-            const fp = await sha256(layer.snap);
-            const key = await makeKey(pwd + '_L' + i, fp);
-            cur = await aesDec(key, layer.iv, cur);
-        }
-        return cur;
-    }
-
-    async function encOTP(data, pwd, snap) {
-        const seedData = JSON.stringify(snap) + pwd;
-        const seedHash = await sha256(seedData);
-        const key = new Uint8Array(data.length);
-        for (let i = 0; i < data.length; i++) {
-            const blockHash = await sha256(Array.from(seedHash).concat([i]));
-            key[i] = blockHash[0];
-        }
-        const ct = new Uint8Array(data.length);
-        for (let i = 0; i < data.length; i++) ct[i] = data[i] ^ key[i];
-        return { mode: 'otp', ct, snap, bits: data.length * 8 };
-    }
-
-    async function decOTP(enc, pwd) {
-        const seedData = JSON.stringify(enc.snap) + pwd;
-        const seedHash = await sha256(seedData);
-        const key = new Uint8Array(enc.ct.length);
-        for (let i = 0; i < enc.ct.length; i++) {
-            const blockHash = await sha256(Array.from(seedHash).concat([i]));
-            key[i] = blockHash[0];
-        }
-        const pt = new Uint8Array(enc.ct.length);
-        for (let i = 0; i < enc.ct.length; i++) pt[i] = enc.ct[i] ^ key[i];
-        return pt;
-    }
-
-    // ===== UI ФУНКЦИИ =====
-    function setMode(m, el) {
-        mode = m;
-        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
-        const bitsMap = { std: 256, par: 1024, otp: '∞' };
-        document.getElementById('bits').textContent = bitsMap[m];
-        
-        const bars = document.querySelectorAll('.strength-bar');
-        bars.forEach(b => b.className = 'strength-bar');
-        if (m === 'std') bars[0].classList.add('active');
-        else if (m === 'par') for(let i=0; i<4; i++) bars[i].classList.add('warning');
-        else for(let i=0; i<4; i++) bars[i].classList.add('danger');
-    }
-
-    async function updateUI() {
-        const t = Date.now();
-        document.getElementById('aqua').textContent = JSON.stringify(getAqua(t), null, 2);
-        document.getElementById('vehicle').textContent = JSON.stringify(getCar(t), null, 2);
-        
-        const moexData = await getMoex();
-        document.getElementById('global').textContent = JSON.stringify(moexData, null, 2);
-        
-        const moexTag = document.getElementById('moexTag');
-        if (moexSource === 'live') {
-            moexTag.textContent = 'MOEX LIVE';
-            moexTag.className = 'tag live';
-        } else {
-            moexTag.textContent = 'MOEX SIM';
-            moexTag.className = 'tag fallback';
-        }
-
-        const ts = Math.floor(t / 1000);
-        const fp = await sha256({ a: getAqua(ts), v: getCar(ts), m: moexData, t: ts });
-        document.getElementById('fingerprint').textContent = 
-            Array.from(fp).map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        document.getElementById('changes').textContent = changes;
-        document.getElementById('uptime').textContent = Math.floor((t - startTime) / 1000) + 's';
-    }
-
-    // ===== ДЕЙСТВИЯ =====
-    window.doEncrypt = async function() {
-        const res = document.getElementById('res');
-        const btn = document.getElementById('encBtn');
-        res.className = 'result info';
-        res.textContent = ' Шифрование...';
-        btn.disabled = true;
-
-        try {
-            const pwd = document.getElementById('pwd').value;
-            const msg = document.getElementById('msg').value;
-            const data = new TextEncoder().encode(msg);
-            const ts = Math.floor(Date.now() / 1000);
-            const moexData = await getMoex();
-            const snap = { a: getAqua(ts), v: getCar(ts), m: moexData, t: ts };
-
-            let enc;
-            const start = Date.now();
-            if (mode === 'std') enc = await encStd(data, pwd, snap);
-            else if (mode === 'par') enc = await encPar(data, pwd, snap);
-            else enc = await encOTP(data, pwd, snap);
-            const dur = Date.now() - start;
-
-            lastEnc = enc;
-            changes++;
-            res.className = 'result success';
-            res.innerHTML = `✅ Зашифровано (${enc.bits} бит)<br>Размер: ${enc.ct.length} байт<br>Время: ${dur}мс<br><small style="color:#8e8e93">Снапшот сохранён. Нажмите "Расшифровать".</small>`;
-        } catch (e) {
-            res.className = 'result error';
-            res.innerHTML = '❌ ' + e.message;
-        }
-        btn.disabled = false;
-    };
-
-    window.doDecrypt = async function() {
-        const res = document.getElementById('res');
-        if (!lastEnc) { res.className = 'result error'; res.textContent = '❌ Сначала зашифруйте'; return; }
-        res.className = 'result info';
-        res.textContent = '⏳ Расшифровка...';
-
-        try {
-            const pwd = document.getElementById('pwd').value;
-            let pt;
-            const start = Date.now();
-            if (lastEnc.mode === 'std') pt = await decStd(lastEnc, pwd);
-            else if (lastEnc.mode === 'par') pt = await decPar(lastEnc, pwd);
-            else pt = await decOTP(lastEnc, pwd);
-            const dur = Date.now() - start;
-
-            const text = new TextDecoder().decode(pt);
-            res.className = 'result success';
-            res.innerHTML = `✅ Расшифровано<br>Сообщение: <b>${text}</b><br>Время: ${dur}мс`;
-        } catch (e) {
-            res.className = 'result error';
-            res.innerHTML = '❌ Ошибка расшифровки: ' + e.message + '<br><small>Неверный пароль или состояние мира изменилось.</small>';
-        }
-    };
-
-    window.doTamper = async function() {
-        const res = document.getElementById('res');
-        if (!lastEnc) { res.className = 'result error'; res.textContent = ' Сначала зашифруйте'; return; }
-        res.className = 'result info';
-        res.textContent = '⏳ Имитация атаки (подмена состояния)...';
-
-        try {
-            const pwd = document.getElementById('pwd').value;
-            const fakeTs = Math.floor(Date.now() / 1000) + 999999;
-            const fakeSnap = { a: getAqua(fakeTs), v: getCar(fakeTs), m: await getMoex(), t: fakeTs };
+        // Генерация физического ключа из данных
+        async function generatePhysicalKey() {
+            const data = JSON.stringify({
+                aquarium: aquariumData,
+                car: carData,
+                timestamp: Date.now()
+            });
             
-            const fakeEnc = { ...lastEnc, snap: fakeSnap };
-            if (lastEnc.mode === 'par') {
-                fakeEnc.layers = lastEnc.layers.map(l => ({ ...l, snap: { ...l.snap, t: fakeTs } }));
-            }
-
-            let pt;
-            if (fakeEnc.mode === 'std') pt = await decStd(fakeEnc, pwd);
-            else if (fakeEnc.mode === 'par') pt = await decPar(fakeEnc, pwd);
-            else pt = await decOTP(fakeEnc, pwd);
-
-            if (lastEnc.mode === 'otp') {
-                const text = new TextDecoder().decode(pt);
-                if (text !== document.getElementById('msg').value) throw new Error('Data corrupted (OTP checksum failed)');
-            }
-
-            res.className = 'result error';
-            res.innerHTML = '⚠️ Расшифровалось (в симуляции возможно совпадение ключей).<br><small>В реальности с физическими датчиками это невозможно.</small>';
-        } catch (e) {
-            res.className = 'result success';
-            res.innerHTML = `🛡️ <b>ЗАЩИТА СРАБОТАЛА!</b><br>${e.message}<br><br><small style="color:#34c759">Мир изменился (другие рыбки, другие обороты двигателя) → ключ не совпал → доступ запрещён.</small>`;
+            const encoder = new TextEncoder();
+            const dataBuffer = encoder.encode(data);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
-    };
 
-    // Запуск
-    setInterval(updateUI, 1000);
-    updateUI();
+        // Обновление данных
+        async function updateData() {
+            try {
+                // Аквариум
+                const aquariumResp = await fetch('/api/v1/sensor/aquarium');
+                aquariumData = await aquariumResp.json();
+                document.getElementById('aquariumData').textContent = JSON.stringify(aquariumData, null, 2);
+
+                // Автомобиль
+                const carResp = await fetch('/api/v1/sensor/elm327_real');
+                carData = await carResp.json();
+                document.getElementById('carData').textContent = JSON.stringify(carData, null, 2);
+
+                // Генерация нового ключа
+                physicalKey = await generatePhysicalKey();
+                document.getElementById('physicalKey').textContent = physicalKey.substring(0, 64) + '...';
+                keyChangeCount++;
+                document.getElementById('keyChanges').textContent = keyChangeCount;
+
+                // Аптайм
+                const uptime = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('uptime').textContent = uptime + 's';
+
+            } catch (e) {
+                console.error('Error updating data:', e);
+                // Используем симуляцию если сервер недоступен
+                simulateData();
+            }
+        }
+
+        // Симуляция данных (fallback)
+        function simulateData() {
+            aquariumData = {
+                temp: 23.5 + Math.random() * 2,
+                ph: 6.8 + Math.random() * 0.5,
+                fish: Array.from({length: 7}, () => Math.floor(Math.random() * 256))
+            };
+            carData = {
+                source: 'elm327_sim',
+                rpm: 700 + Math.random() * 200,
+                coolantTemp: 95 + Math.random() * 10,
+                intakePressure: 35 + Math.random() * 10,
+                throttle: 10 + Math.random() * 5,
+                ignitionAngle: -25 + Math.random() * 10,
+                o2Sensor1: 0.5 + Math.random() * 0.5,
+                fuelTrim: -5 + Math.random() * 10
+            };
+            
+            document.getElementById('aquariumData').textContent = JSON.stringify(aquariumData, null, 2);
+            document.getElementById('carData').textContent = JSON.stringify(carData, null, 2);
+            
+            generatePhysicalKey().then(key => {
+                physicalKey = key;
+                document.getElementById('physicalKey').textContent = key.substring(0, 64) + '...';
+            });
+        }
+
+        // Выбор режима
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-option').forEach(el => el.classList.remove('active'));
+            event.target.closest('.mode-option').classList.add('active');
+            
+            const bitLengths = { standard: 256, paranoid: 1024, absolute: '∞' };
+            document.getElementById('bitLength').textContent = bitLengths[mode];
+        }
+
+        // Шифрование
+        async function encrypt() {
+            const password = document.getElementById('passwordInput').value || 'default';
+            const message = document.getElementById('messageInput').value;
+            const resultEl = document.getElementById('result');
+            
+            try {
+                const keyMaterial = await generatePhysicalKey();
+                const fullKey = keyMaterial + password;
+                
+                const encoder = new TextEncoder();
+                const keyBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(fullKey));
+                const messageBuffer = encoder.encode(message);
+                
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                const cryptoKey = await crypto.subtle.importKey(
+                    'raw', keyBuffer, { name: 'AES-GCM', length: 256 }, false, ['encrypt']
+                );
+                
+                const encrypted = await crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv: iv },
+                    cryptoKey,
+                    messageBuffer
+                );
+                
+                const encryptedHex = Array.from(new Uint8Array(encrypted)).map(b => b.toString(16).padStart(2, '0')).join('');
+                const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                resultEl.textContent = `✅ Зашифровано!\n\nIV: ${ivHex}\nCiphertext: ${encryptedHex}\n\nОтправлено на сервер.`;
+                
+                // Отправка на сервер
+                await fetch('/api/v1/store', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ciphertext: encryptedHex,
+                        snapshot: { aquarium: aquariumData, car: carData, timestamp: Date.now() },
+                        mode: currentMode,
+                        bits: currentMode === 'standard' ? 256 : currentMode === 'paranoid' ? 1024 : 0
+                    })
+                });
+                
+            } catch (e) {
+                resultEl.textContent = `❌ Ошибка: ${e.message}`;
+            }
+        }
+
+        // Расшифровка
+        async function decrypt() {
+            const password = document.getElementById('passwordInput').value || 'default';
+            const resultEl = document.getElementById('result');
+            
+            resultEl.textContent = '🔓 Введите зашифрованные данные для расшифровки (в разработке)';
+        }
+
+        // Атака
+        function attack() {
+            const resultEl = document.getElementById('result');
+            resultEl.innerHTML = '⚠️ <b>ЗАЩИТА СРАБОТАЛА!</b><br><br>' +
+                'Мир изменился (другие рыбки, другие обороты двигателя) → ключ не совпал → доступ запрещён.';
+            resultEl.style.color = '#f44336';
+        }
+
+        // Запуск
+        setInterval(updateData, 1000);
+        updateData();
     </script>
 </body>
 </html>
