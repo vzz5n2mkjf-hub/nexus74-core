@@ -82,7 +82,6 @@
         .btn-encrypt { background: #4CAF50; color: white; }
         .btn-decrypt { background: #2196F3; color: white; }
         .btn-attack { background: #f44336; color: white; }
-        .btn-cancel { background: #9E9E9E; color: white; }
         input, textarea {
             width: 100%;
             padding: 12px;
@@ -124,11 +123,15 @@
             font-size: 0.9em;
         }
         .hidden { display: none !important; }
+        .key-input {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔐 NEXUS74</h1>
+        <h1> NEXUS74</h1>
         <p class="subtitle">Протокол Омни-энтропии. Шифрование привязано к состоянию аквариума и реальным данным авто (ELM327).</p>
 
         <!-- АКВАРИУМ -->
@@ -139,7 +142,7 @@
 
         <!-- АВТОМОБИЛЬ -->
         <div class="card">
-            <h3> Автомобиль (ELM327) <span class="tag real">REAL</span></h3>
+            <h3>🚗 Автомобиль (ELM327) <span class="tag real">REAL</span></h3>
             <pre id="carData">загрузка...</pre>
         </div>
 
@@ -166,7 +169,7 @@
 
         <!-- РЕЖИМ ШИФРОВАНИЯ -->
         <div class="card">
-            <h3>🛡️ Режим шифрования</h3>
+            <h3>️ Режим шифрования</h3>
             <div class="mode-selector">
                 <div class="mode-option active" onclick="selectMode('standard', this)">
                     <strong>🟢 Стандарт</strong><br>
@@ -189,15 +192,16 @@
             <input type="password" id="passwordInput" placeholder="Пароль (участвует в ключе)">
             <input type="text" id="messageInput" placeholder="Сообщение для шифрования" value="челябинск">
             <input type="text" id="ciphertextInput" placeholder="Вставьте зашифрованные данные (Base64)" class="hidden">
+            <input type="text" id="savedKeyInput" placeholder="Или вставьте сохранённый ключ (необязательно)" class="hidden key-input">
             <button class="btn-encrypt" id="encryptBtn">Зашифровать</button>
             <button class="btn-decrypt" id="decryptBtn">Расшифровать</button>
-            <button class="btn-attack" onclick="attack()">⚠️ Атака (Чужие рыбки)</button>
+            <button class="btn-attack" onclick="attack()">️ Атака (Чужие рыбки)</button>
             <div id="result">Готов к работе. Выберите режим и нажмите "Зашифровать".</div>
         </div>
 
         <!-- КАК ЭТО РАБОТАЕТ -->
         <div class="card">
-            <h3>📖 Как это работает?</h3>
+            <h3> Как это работает?</h3>
             <p><strong>🟢 Стандарт (256 бит):</strong> AES-256-GCM. Ключ = SHA-256(Аквариум + Авто + Пароль). Невзламываемо.</p>
             <p><strong>🟡 Параноик (1024 бита):</strong> 4 слоя AES-256. Каждый слой использует свой срез энтропии.</p>
             <p><strong>🔴 Абсолют (OTP):</strong> Одноразовый блокнот. Длина ключа = длине сообщения. Идеальная криптография (Шеннон, 1949).</p>
@@ -249,7 +253,7 @@
                     keyChangeCount++;
                     document.getElementById('keyChanges').textContent = keyChangeCount;
                 } else {
-                    document.getElementById('physicalKey').textContent = ' Ожидание...';
+                    document.getElementById('physicalKey').textContent = '⏳ Ожидание...';
                     document.getElementById('physicalKey').style.color = '#FF9800';
                 }
 
@@ -279,7 +283,7 @@
             
             try {
                 if (!message) {
-                    resultEl.textContent = ' Введите сообщение для шифрования';
+                    resultEl.textContent = '⚠️ Введите сообщение для шифрования';
                     return;
                 }
                 
@@ -295,8 +299,10 @@
                 resultEl.innerHTML = `✅ <b>Зашифровано!</b><br><br>
                     <small>Ciphertext (Base64):</small><br>
                     <code style="word-break: break-all; font-size: 0.85em;">${encrypted}</code><br><br>
-                    <small>Ключ: ${physKey.substring(0, 32)}...</small><br><br>
-                    <small style="color: #4CAF50;">✓ Сохранено на сервере</small>`;
+                    <small>Ключ (сохрани для расшифровки!):</small><br>
+                    <code style="word-break: break-all; font-size: 0.85em; color: #FFD700;">${physKey}</code><br><br>
+                    <small style="color: #4CAF50;">✓ Сохранено на сервере</small><br><br>
+                    <small style="color: #FF9800;">⚠️ Для расшифровки нужен этот же ключ + пароль!</small>`;
                 
                 fetch('/api/v1/store', {
                     method: 'POST',
@@ -315,7 +321,7 @@
                 
             } catch (e) {
                 console.error('Encryption error:', e);
-                resultEl.textContent = `❌ Ошибка: ${e.message}`;
+                resultEl.textContent = ` Ошибка: ${e.message}`;
             }
         }
 
@@ -323,6 +329,7 @@
         function toggleDecryptMode() {
             const msgInput = document.getElementById('messageInput');
             const cipherInput = document.getElementById('ciphertextInput');
+            const savedKeyInput = document.getElementById('savedKeyInput');
             const encryptBtn = document.getElementById('encryptBtn');
             const decryptBtn = document.getElementById('decryptBtn');
             const resultEl = document.getElementById('result');
@@ -333,14 +340,16 @@
                 // Режим расшифровки
                 msgInput.classList.add('hidden');
                 cipherInput.classList.remove('hidden');
+                savedKeyInput.classList.remove('hidden');
                 encryptBtn.classList.add('hidden');
                 decryptBtn.textContent = 'Выполнить расшифровку';
                 decryptBtn.className = 'btn-encrypt';
-                resultEl.innerHTML = '🔓 <b>Режим расшифровки</b><br><br>1. Вставьте зашифрованные данные (Base64) в поле выше<br>2. Введите тот же пароль<br>3. Нажмите "Выполнить расшифровку"<br><br>⚠️ <b>Важно:</b> Ключ должен совпадать с моментом шифрования!';
+                resultEl.innerHTML = '🔓 <b>Режим расшифровки</b><br><br>1. Вставьте зашифрованные данные (Base64)<br>2. Введите тот же пароль<br>3. (Опционально) Вставьте сохранённый ключ<br>4. Нажмите "Выполнить расшифровку"<br><br>⚠️ <b>Важно:</b> Если ключ не совпадает с моментом шифрования — расшифровка не сработает!';
             } else {
                 // Режим шифрования
                 msgInput.classList.remove('hidden');
                 cipherInput.classList.add('hidden');
+                savedKeyInput.classList.add('hidden');
                 encryptBtn.classList.remove('hidden');
                 decryptBtn.textContent = 'Расшифровать';
                 decryptBtn.className = 'btn-decrypt';
@@ -352,6 +361,7 @@
         function doDecrypt() {
             const password = document.getElementById('passwordInput').value || 'default';
             const ciphertext = document.getElementById('ciphertextInput').value.trim();
+            const savedKey = document.getElementById('savedKeyInput').value.trim();
             const resultEl = document.getElementById('result');
             
             try {
@@ -360,7 +370,8 @@
                     return;
                 }
                 
-                const physKey = generatePhysicalKey();
+                // Используем сохранённый ключ если есть, иначе генерируем новый
+                const physKey = savedKey || generatePhysicalKey();
                 const fullKey = physKey + password;
                 
                 const decrypted = CryptoJS.AES.decrypt(ciphertext, fullKey);
@@ -370,13 +381,16 @@
                     resultEl.innerHTML = `✅ <b>Расшифровано!</b><br><br>
                         <small>Сообщение:</small><br>
                         <code style="font-size: 1.2em; color: #4CAF50;">${plaintext}</code><br><br>
-                        <small style="color: #2196F3;">✓ Ключ совпал!</small>`;
+                        <small style="color: #2196F3;">✓ Ключ совпал!</small><br><br>
+                        <small>Использован ключ: ${physKey.substring(0, 32)}...</small>`;
                 } else {
                     resultEl.innerHTML = `❌ <b>Не удалось расшифровать!</b><br><br>
                         <small>Причины:</small><br>
                         • Данные изменились (ключ другой)<br>
-                        • Неверный пароль<br><br>
-                        <small>Текущий ключ: ${physKey.substring(0, 32)}...</small>`;
+                        • Неверный пароль<br>
+                        • Неверный сохранённый ключ<br><br>
+                        <small>Текущий ключ: ${generatePhysicalKey().substring(0, 32)}...</small><br><br>
+                        <small style="color: #FF9800;">💡 Совет: Сохраняйте ключ при шифровании!</small>`;
                 }
                 
             } catch (e) {
